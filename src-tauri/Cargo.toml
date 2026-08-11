@@ -1,6 +1,6 @@
 [package]
 name = "farmsim-manager"
-version = "0.1.1"
+version = "0.1.2"
 description = "FS25 field & crop rotation planner"
 authors = ["mattyejames"]
 edition = "2021"
