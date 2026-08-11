@@ -10,9 +10,25 @@ A desktop companion app for planning your farm in **Farming Simulator 25**. Defi
 
 Data is stored locally in a SQLite database on your machine — no account, no login, no internet connection required.
 
-## Download
+## Install
 
-Grab the latest installer for your OS from the [Releases page](../../releases) (Windows, macOS, Linux).
+1. Go to the [**Releases page**](../../releases) and open the latest release at the top.
+2. Under **Assets**, download the file for your operating system:
+
+   | Your OS | File to download |
+   |---|---|
+   | Windows | `*.msi` |
+   | macOS | `*.dmg` |
+   | Linux | `*.deb` (Debian/Ubuntu), `*.rpm` (Fedora/RHEL), or `*.AppImage` (any distro) |
+
+3. Open the downloaded file and follow the installer prompts.
+
+The app isn't code-signed yet, so your OS will likely show a security warning the first time — this is expected for a small independent app, not a sign anything is wrong:
+
+- **Windows**: SmartScreen may say *"Windows protected your PC"*. Click **More info**, then **Run anyway**.
+- **macOS**: Gatekeeper may say the app is *"from an unidentified developer"*. Right-click (or Control-click) the app and choose **Open**, then confirm **Open** in the dialog.
+
+Once installed, no further setup is needed — the app runs fully offline and stores your data locally.
 
 ## Development
 
