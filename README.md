@@ -13,15 +13,17 @@ Data is stored locally in a SQLite database on your machine — no account, no l
 ## Install
 
 1. Go to the [**Releases page**](../../releases) and open the latest release at the top.
-2. Under **Assets**, download the file for your operating system:
+2. Under **Assets**, download the one file for your operating system:
 
-   | Your OS | File to download |
+   | Your OS | Download |
    |---|---|
-   | Windows | `*.msi` |
-   | macOS | `*.dmg` |
-   | Linux | `*.deb` (Debian/Ubuntu), `*.rpm` (Fedora/RHEL), or `*.AppImage` (any distro) |
+   | Windows | the `.msi` file |
+   | macOS | the `.dmg` file — pick `aarch64` for Apple Silicon (M1/M2/M3/M4) Macs, or `x64` for Intel Macs. Not sure which chip you have? Apple menu → **About This Mac**. |
+   | Linux | the `.AppImage` file — works on any distro, no install step needed, just make it executable and run it |
 
 3. Open the downloaded file and follow the installer prompts.
+
+   (Linux users: other package formats like `.deb` and `.rpm` are also attached to the release if you'd rather use your distro's package manager, but the AppImage is the simplest option and needs nothing extra installed.)
 
 The app isn't code-signed yet, so your OS will likely show a security warning the first time — this is expected for a small independent app, not a sign anything is wrong:
 
