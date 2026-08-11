@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { listFields } from "../lib/queries/fields";
 import { listRotationEntries } from "../lib/queries/rotation";
-import { getGameState, setGameState, shiftSeason } from "../lib/queries/gameState";
-import { tasksForSeason, describeTask } from "../lib/tasks";
+import { getGameState, setGameState } from "../lib/queries/gameState";
+import { listVehicles } from "../lib/queries/vehicles";
+import { shiftMonth, monthLabel } from "../lib/calendar";
+import { tasksForMonth, describeTask } from "../lib/tasks";
+import { ownedCategorySet, checkEquipment } from "../lib/equipment";
 import type { Task } from "../lib/tasks";
-import { SEASON_LABELS } from "../lib/types";
-import type { Field, RotationEntry, GameState } from "../lib/types";
+import type { Field, RotationEntry, GameState, Vehicle } from "../lib/types";
 
 const TASK_KIND_STYLES: Record<Task["kind"], string> = {
   sow: "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200",
@@ -16,20 +18,37 @@ const TASK_KIND_STYLES: Record<Task["kind"], string> = {
     "border-stone-200 bg-stone-50 text-stone-500 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-400",
 };
 
-function TaskList({ tasks, emptyLabel }: { tasks: Task[]; emptyLabel: string }) {
+function TaskList({
+  tasks,
+  emptyLabel,
+  ownedCategories,
+}: {
+  tasks: Task[];
+  emptyLabel: string;
+  ownedCategories: Set<string>;
+}) {
   if (tasks.length === 0) {
     return <p className="text-sm text-stone-500">{emptyLabel}</p>;
   }
   return (
     <ul className="space-y-2">
-      {tasks.map((task, i) => (
-        <li
-          key={i}
-          className={`rounded-md border px-3 py-2 text-sm ${TASK_KIND_STYLES[task.kind]}`}
-        >
-          {describeTask(task)}
-        </li>
-      ))}
+      {tasks.map((task, i) => {
+        const checklist = task.machines ? checkEquipment(task.machines, ownedCategories) : [];
+        return (
+          <li key={i} className={`rounded-md border px-3 py-2 text-sm ${TASK_KIND_STYLES[task.kind]}`}>
+            <p>{describeTask(task)}</p>
+            {checklist.length > 0 && (
+              <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs opacity-90">
+                {checklist.map(({ machine, owned }) => (
+                  <li key={machine} className={owned ? "" : "font-medium"}>
+                    {owned ? "✓" : "✗"} {machine}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </li>
+        );
+      })}
     </ul>
   );
 }
@@ -37,15 +56,17 @@ function TaskList({ tasks, emptyLabel }: { tasks: Task[]; emptyLabel: string }) 
 export default function Dashboard() {
   const [fields, setFields] = useState<Field[]>([]);
   const [entries, setEntries] = useState<RotationEntry[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [gameState, setGameStateLocal] = useState<GameState | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([listFields(), listRotationEntries(), getGameState()]).then(
-      ([f, e, gs]) => {
+    Promise.all([listFields(), listRotationEntries(), getGameState(), listVehicles()]).then(
+      ([f, e, gs, v]) => {
         setFields(f);
         setEntries(e);
         setGameStateLocal(gs);
+        setVehicles(v);
         setLoading(false);
       },
     );
@@ -53,7 +74,7 @@ export default function Dashboard() {
 
   async function handleShift(direction: 1 | -1) {
     if (!gameState) return;
-    const next = shiftSeason(gameState, direction);
+    const next = shiftMonth(gameState, direction);
     setGameStateLocal(next);
     await setGameState(next);
   }
@@ -61,10 +82,11 @@ export default function Dashboard() {
   if (loading || !gameState) return <p className="text-stone-500">Loading…</p>;
 
   const plannedYears = new Set(entries.map((e) => e.year)).size;
+  const ownedCategories = ownedCategorySet(vehicles);
 
-  const dueNow = tasksForSeason(fields, entries, gameState.current_year, gameState.current_season);
-  const upcomingState = shiftSeason(gameState, 1);
-  const upcoming = tasksForSeason(fields, entries, upcomingState.current_year, upcomingState.current_season);
+  const dueNow = tasksForMonth(fields, entries, gameState.current_year, gameState.current_month);
+  const upcomingState = shiftMonth(gameState, 1);
+  const upcoming = tasksForMonth(fields, entries, upcomingState.current_year, upcomingState.current_month);
 
   return (
     <div>
@@ -82,9 +104,9 @@ export default function Dashboard() {
         <>
           <div className="mb-6 flex items-center justify-between rounded-lg border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-950">
             <div>
-              <p className="text-sm text-stone-500">Current season</p>
+              <p className="text-sm text-stone-500">Current month</p>
               <p className="text-xl font-semibold">
-                {SEASON_LABELS[gameState.current_season]} · Year {gameState.current_year}
+                {monthLabel(gameState.current_month)} · Year {gameState.current_year}
               </p>
             </div>
             <div className="flex gap-2">
@@ -121,22 +143,40 @@ export default function Dashboard() {
           <div className="mb-6 grid gap-6 sm:grid-cols-2">
             <div>
               <h2 className="mb-2 text-lg font-semibold">
-                Tasks for {SEASON_LABELS[gameState.current_season]}, Year {gameState.current_year}
+                Tasks for {monthLabel(gameState.current_month)}, Year {gameState.current_year}
               </h2>
-              <TaskList tasks={dueNow} emptyLabel="Nothing due this season." />
+              <TaskList tasks={dueNow} emptyLabel="Nothing due this month." ownedCategories={ownedCategories} />
             </div>
             <div>
               <h2 className="mb-2 text-lg font-semibold">
-                Coming up in {SEASON_LABELS[upcomingState.current_season]}, Year{" "}
-                {upcomingState.current_year}
+                Coming up in {monthLabel(upcomingState.current_month)}, Year {upcomingState.current_year}
               </h2>
-              <TaskList tasks={upcoming} emptyLabel="Nothing planned for next season yet." />
+              <TaskList
+                tasks={upcoming}
+                emptyLabel="Nothing planned for next month yet."
+                ownedCategories={ownedCategories}
+              />
             </div>
           </div>
 
-          <p>
+          {vehicles.length === 0 && (
+            <p className="mb-6 text-sm text-stone-500">
+              No vehicles in your inventory yet, so every task's equipment shows as missing.{" "}
+              <Link to="/vehicles" className="text-emerald-600 underline">
+                Add what you own →
+              </Link>
+            </p>
+          )}
+
+          <p className="flex flex-wrap gap-x-6 gap-y-1">
             <Link to="/rotation" className="text-emerald-600 underline">
               Open the full rotation planner →
+            </Link>
+            <Link to="/timeline" className="text-emerald-600 underline">
+              View the year timeline →
+            </Link>
+            <Link to="/vehicles" className="text-emerald-600 underline">
+              Manage vehicles →
             </Link>
           </p>
         </>

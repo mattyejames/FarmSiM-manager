@@ -2,7 +2,7 @@ import { useState } from "react";
 import CropPicker from "./CropPicker";
 import { SEASON_LABELS } from "../lib/types";
 import type { Season } from "../lib/types";
-import { getCropInfo } from "../lib/crops";
+import { getCropInfo, formatMonthRange } from "../lib/crops";
 
 interface Props {
   fieldName: string;
@@ -30,7 +30,7 @@ export default function RotationCell({
   const cropInfo = getCropInfo(crop);
   const isReplantingType = cropInfo?.growthType === "annual" || cropInfo?.growthType === "forage";
   const offSeason = isReplantingType && !cropInfo?.sowSeasons.includes(season);
-  const sowSeasonLabel = cropInfo?.sowSeasons.map((s) => SEASON_LABELS[s]).join(" or ");
+  const sowMonthLabel = cropInfo ? formatMonthRange(cropInfo.sowMonths) : "";
 
   async function handleSave() {
     setSaving(true);
@@ -61,9 +61,12 @@ export default function RotationCell({
 
         {cropInfo && (
           <div className="mt-2 space-y-1.5 text-sm">
+            <p className="text-xs text-stone-500 dark:text-stone-400">
+              Sow {formatMonthRange(cropInfo.sowMonths)} · Harvest {formatMonthRange(cropInfo.harvestMonths)}
+            </p>
             {offSeason && (
               <p className="rounded-md bg-amber-50 px-3 py-2 text-amber-800 dark:bg-amber-950 dark:text-amber-200">
-                ⚠ {cropInfo.name} is normally sown in {sowSeasonLabel} in FS25 — planting in{" "}
+                ⚠ {cropInfo.name} is normally sown {sowMonthLabel} in FS25 — planting in{" "}
                 {SEASON_LABELS[season]} may reduce yield or fail to mature.
                 {cropInfo.confidence === "low" &&
                   " Season data for this crop is unconfirmed — treat as a rough guide."}

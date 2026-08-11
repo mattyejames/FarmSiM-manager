@@ -4,6 +4,8 @@ const links = [
   { to: "/", label: "Dashboard", end: true },
   { to: "/fields", label: "Fields" },
   { to: "/rotation", label: "Rotation" },
+  { to: "/timeline", label: "Timeline" },
+  { to: "/vehicles", label: "Vehicles" },
 ];
 
 const linkClass = (isActive: boolean) =>
