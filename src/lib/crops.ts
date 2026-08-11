@@ -511,6 +511,13 @@ export function getCropInfo(name: string | null): CropInfo | undefined {
   return CROPS.find((c) => c.name === name);
 }
 
+/** Every distinct machine category referenced across all crops' operations, derived rather
+ * than hand-maintained so it can't drift out of sync as crops.ts changes. Used as the fixed
+ * vocabulary for vehicle-inventory categories, so ownership can be matched by exact string. */
+export const EQUIPMENT_CATEGORIES: string[] = Array.from(
+  new Set(CROPS.flatMap((c) => c.operations.map((op) => op.machine).filter((m): m is string => Boolean(m)))),
+).sort((a, b) => a.localeCompare(b));
+
 /** Sentinel used in selects for "no crop planned" — stored as null in the DB. */
 export const NO_CROP_LABEL = "Fallow / No Crop";
 

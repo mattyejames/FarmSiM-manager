@@ -6,6 +6,7 @@ import FieldForm from "./routes/FieldForm";
 import FieldDetail from "./routes/FieldDetail";
 import RotationGrid from "./routes/RotationGrid";
 import Timeline from "./routes/Timeline";
+import Vehicles from "./routes/Vehicles";
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
           <Route path="/fields/:fieldId/edit" element={<FieldForm />} />
           <Route path="/rotation" element={<RotationGrid />} />
           <Route path="/timeline" element={<Timeline />} />
+          <Route path="/vehicles" element={<Vehicles />} />
         </Routes>
       </main>
     </div>

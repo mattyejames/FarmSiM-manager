@@ -49,6 +49,24 @@ export interface RotationEntryInput {
   notes: string | null;
 }
 
+/** A vehicle/implement the player owns in-game. category is free text matched against the
+ * `machine` strings in crops.ts operations, so the app can tell which required equipment
+ * for a crop the player already has. */
+export interface Vehicle {
+  id: string;
+  name: string;
+  category: string;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface VehicleInput {
+  name: string;
+  category: string;
+  notes: string | null;
+}
+
 /** The player's current in-game year/month — the reference point task tracking and the
  * timeline compare rotation entries against. Manually advanced by the user; there's no live
  * game to read it from. Month-level (1-12) since crop reference data is month-precise. */
