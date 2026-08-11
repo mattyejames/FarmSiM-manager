@@ -2,6 +2,7 @@ import { useState } from "react";
 import CropPicker from "./CropPicker";
 import { SEASON_LABELS } from "../lib/types";
 import type { Season } from "../lib/types";
+import { getCropInfo } from "../lib/crops";
 
 interface Props {
   fieldName: string;
@@ -25,6 +26,11 @@ export default function RotationCell({
   const [crop, setCrop] = useState(initialCrop);
   const [notes, setNotes] = useState(initialNotes ?? "");
   const [saving, setSaving] = useState(false);
+
+  const cropInfo = getCropInfo(crop);
+  const isReplantingType = cropInfo?.growthType === "annual" || cropInfo?.growthType === "forage";
+  const offSeason = isReplantingType && !cropInfo?.sowSeasons.includes(season);
+  const sowSeasonLabel = cropInfo?.sowSeasons.map((s) => SEASON_LABELS[s]).join(" or ");
 
   async function handleSave() {
     setSaving(true);
@@ -52,6 +58,30 @@ export default function RotationCell({
           Crop
         </label>
         <CropPicker value={crop} onChange={setCrop} />
+
+        {cropInfo && (
+          <div className="mt-2 space-y-1.5 text-sm">
+            {offSeason && (
+              <p className="rounded-md bg-amber-50 px-3 py-2 text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+                ⚠ {cropInfo.name} is normally sown in {sowSeasonLabel} in FS25 — planting in{" "}
+                {SEASON_LABELS[season]} may reduce yield or fail to mature.
+                {cropInfo.confidence === "low" &&
+                  " Season data for this crop is unconfirmed — treat as a rough guide."}
+              </p>
+            )}
+            {cropInfo.growthType === "perennial" && (
+              <p className="rounded-md bg-sky-50 px-3 py-2 text-sky-800 dark:bg-sky-950 dark:text-sky-200">
+                Perennial — plant once, then it regrows each year without replanting.
+              </p>
+            )}
+            {cropInfo.growthType === "ratoon" && (
+              <p className="rounded-md bg-sky-50 px-3 py-2 text-sky-800 dark:bg-sky-950 dark:text-sky-200">
+                Regrows after harvest without replanting, but will need replowing after a few cycles.
+              </p>
+            )}
+            {cropInfo.note && <p className="text-stone-500 dark:text-stone-400">{cropInfo.note}</p>}
+          </div>
+        )}
 
         <label htmlFor="cell-notes" className="mb-1 mt-4 block text-sm font-medium">
           Notes
