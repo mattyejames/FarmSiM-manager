@@ -49,9 +49,10 @@ export interface RotationEntryInput {
   notes: string | null;
 }
 
-/** The player's current in-game year/season — the reference point task tracking compares
- * rotation entries against. Manually advanced by the user; there's no live game to read it from. */
+/** The player's current in-game year/month — the reference point task tracking and the
+ * timeline compare rotation entries against. Manually advanced by the user; there's no live
+ * game to read it from. Month-level (1-12) since crop reference data is month-precise. */
 export interface GameState {
   current_year: number;
-  current_season: Season;
+  current_month: number;
 }

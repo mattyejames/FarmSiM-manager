@@ -1,4 +1,5 @@
 import type { Season } from "./types";
+import { seasonsFromMonths } from "./calendar";
 
 export type CropGrowthType = "annual" | "perennial" | "ratoon" | "forage";
 
@@ -35,35 +36,6 @@ export interface CropInfo {
 }
 
 const ALL_MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
-
-/** January=index 0 ... December=index 11, mapped onto the app's 4-season model. */
-const SEASON_BY_MONTH: Season[] = [
-  "WINTER",
-  "WINTER",
-  "SPRING",
-  "SPRING",
-  "SPRING",
-  "SUMMER",
-  "SUMMER",
-  "SUMMER",
-  "AUTUMN",
-  "AUTUMN",
-  "AUTUMN",
-  "WINTER",
-];
-
-function seasonsFromMonths(months: number[]): Season[] {
-  const seen = new Set<Season>();
-  const ordered: Season[] = [];
-  for (const month of months) {
-    const season = SEASON_BY_MONTH[month - 1];
-    if (!seen.has(season)) {
-      seen.add(season);
-      ordered.push(season);
-    }
-  }
-  return ordered;
-}
 
 type RawCrop = Omit<CropInfo, "sowSeasons" | "harvestSeasons">;
 
@@ -539,31 +511,7 @@ export function getCropInfo(name: string | null): CropInfo | undefined {
   return CROPS.find((c) => c.name === name);
 }
 
-const MONTH_ABBR = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
-
-/** Formats a set of month numbers (1-12) as a compact range string, e.g. "Sep–Oct". */
-export function formatMonthRange(months: number[]): string {
-  if (months.length === 0) return "";
-  if (months.length === 12) return "year-round";
-  const sorted = [...months].sort((a, b) => a - b);
-  const first = sorted[0];
-  const last = sorted[sorted.length - 1];
-  if (first === last) return MONTH_ABBR[first - 1];
-  return `${MONTH_ABBR[first - 1]}–${MONTH_ABBR[last - 1]}`;
-}
-
 /** Sentinel used in selects for "no crop planned" — stored as null in the DB. */
 export const NO_CROP_LABEL = "Fallow / No Crop";
+
+export { formatMonthRange } from "./calendar";
