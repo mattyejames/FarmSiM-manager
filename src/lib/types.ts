@@ -48,3 +48,10 @@ export interface RotationEntryInput {
   crop: string | null;
   notes: string | null;
 }
+
+/** The player's current in-game year/season — the reference point task tracking compares
+ * rotation entries against. Manually advanced by the user; there's no live game to read it from. */
+export interface GameState {
+  current_year: number;
+  current_season: Season;
+}
