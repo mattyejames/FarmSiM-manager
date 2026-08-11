@@ -15,6 +15,24 @@ pub fn run() {
             sql: include_str!("../migrations/002_game_state.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 3,
+            description: "add_field_number",
+            sql: include_str!("../migrations/003_field_number.sql"),
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 4,
+            description: "add_map_selection_and_field_pins",
+            sql: include_str!("../migrations/004_map.sql"),
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 5,
+            description: "create_vehicle_table",
+            sql: include_str!("../migrations/005_vehicle.sql"),
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()

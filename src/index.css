@@ -1,15 +1,53 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  /* Dark "sim-companion" chrome — the app's one and only theme, no light-mode variant. */
+  --color-surface-0: #12171a; /* sidebar, deepest panels */
+  --color-surface-1: #171d20; /* page content background */
+  --color-surface-2: #1b2225; /* cards, table bodies */
+  --color-surface-3: #1e262a; /* table headers, raised rows */
+  --color-surface-4: #141a1d; /* top bars, inset inputs */
+  --color-surface-hover: #232c30; /* active nav item, hovered rows */
+
+  --color-border: #2a3336;
+  --color-border-strong: #313b3e;
+  --color-border-faint: #232b2e;
+
+  --color-text: #f1f4ef;
+  --color-text-muted: #c4ccc4;
+  --color-text-dim: #a5b0a8;
+  --color-text-dimmer: #8e9a90;
+  --color-text-faint: #7e8a80;
+  --color-text-subtle: #6c7770;
+  --color-text-ghost: #5d6862;
+
+  --color-accent: #6fa82c;
+  --color-accent-ink: #0f1512;
+
+  --color-warn: #e8be55;
+  --color-warn-muted: #d6a93c;
+  --color-warn-bg: #2a2412;
+  --color-warn-border: #40361b;
+
+  --color-info: #6fb5b0;
+  --color-info-bg: #152426;
+  --color-info-border: #24413f;
+
+  --color-danger: #e0867a;
+  --color-danger-bg: #2a1714;
+  --color-danger-border: #46231c;
+}
+
 :root {
-  color-scheme: light dark;
+  color-scheme: dark;
 }
 
 body {
   margin: 0;
-  font-family:
-    "Inter",
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    sans-serif;
+  background: var(--color-surface-1);
+  color: var(--color-text);
+  font-family: var(--font-sans);
 }
