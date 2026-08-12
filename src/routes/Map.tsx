@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { listFields, updateFieldPin } from "../lib/queries/fields";
 import { listRotationEntries } from "../lib/queries/rotation";
 import { getMapSelection, setMapSelection } from "../lib/queries/map";
+import { DEFAULT_SAVE_ID } from "../lib/queries/saves";
 import { activeMapImage, mapLabel, BUNDLED_MAP_KEYS, BUNDLED_MAP_LABELS } from "../lib/maps";
 import { dominantCrop } from "../lib/rotationSummary";
 import { useGameState } from "../lib/gameStateContext";
@@ -24,7 +25,11 @@ export default function MapScreen() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function refresh() {
-    const [f, e, sel] = await Promise.all([listFields(), listRotationEntries(), getMapSelection()]);
+    const [f, e, sel] = await Promise.all([
+      listFields(DEFAULT_SAVE_ID),
+      listRotationEntries(DEFAULT_SAVE_ID),
+      getMapSelection(),
+    ]);
     setFields(f);
     setEntries(e);
     setSelection(sel);

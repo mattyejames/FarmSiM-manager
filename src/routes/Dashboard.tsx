@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { listFields } from "../lib/queries/fields";
 import { listRotationEntries } from "../lib/queries/rotation";
 import { listVehicles } from "../lib/queries/vehicles";
+import { DEFAULT_SAVE_ID } from "../lib/queries/saves";
 import { tasksForMonth, describeTask } from "../lib/tasks";
 import { dominantCrop } from "../lib/rotationSummary";
 import { estimateYieldIndex } from "../lib/yieldIndex";
@@ -24,7 +25,11 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([listFields(), listRotationEntries(), listVehicles()]).then(([f, e, v]) => {
+    Promise.all([
+      listFields(DEFAULT_SAVE_ID),
+      listRotationEntries(DEFAULT_SAVE_ID),
+      listVehicles(DEFAULT_SAVE_ID),
+    ]).then(([f, e, v]) => {
       setFields(f);
       setEntries(e);
       setVehicles(v);

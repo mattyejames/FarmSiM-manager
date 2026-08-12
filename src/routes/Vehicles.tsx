@@ -3,6 +3,7 @@ import { listFields } from "../lib/queries/fields";
 import { listRotationEntries } from "../lib/queries/rotation";
 import { listVehicles, createVehicle, updateVehicle, deleteVehicle } from "../lib/queries/vehicles";
 import { coverageForRotation, cropCountForCategory } from "../lib/equipment";
+import { DEFAULT_SAVE_ID } from "../lib/queries/saves";
 import VehicleForm from "../components/VehicleForm";
 import PageHeader from "../components/ui/PageHeader";
 import Button from "../components/ui/Button";
@@ -18,7 +19,11 @@ export default function Vehicles() {
   const [editing, setEditing] = useState<Vehicle | null | undefined>(undefined);
 
   async function refresh() {
-    const [v, f, e] = await Promise.all([listVehicles(), listFields(), listRotationEntries()]);
+    const [v, f, e] = await Promise.all([
+      listVehicles(DEFAULT_SAVE_ID),
+      listFields(DEFAULT_SAVE_ID),
+      listRotationEntries(DEFAULT_SAVE_ID),
+    ]);
     setVehicles(v);
     setFields(f);
     setEntries(e);
@@ -41,7 +46,7 @@ export default function Vehicles() {
     if (editing) {
       await updateVehicle(editing.id, input);
     } else {
-      await createVehicle(input);
+      await createVehicle(DEFAULT_SAVE_ID, input);
     }
     setEditing(undefined);
     await refresh();

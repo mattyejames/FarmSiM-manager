@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { createField, getField, updateField } from "../lib/queries/fields";
+import { DEFAULT_SAVE_ID } from "../lib/queries/saves";
 import SoilTypeInput from "../components/SoilTypeInput";
 import PageHeader from "../components/ui/PageHeader";
 import Button from "../components/ui/Button";
@@ -72,7 +73,7 @@ export default function FieldForm() {
         await updateField(fieldId, input);
         navigate(`/fields/${fieldId}`);
       } else {
-        const id = await createField(input);
+        const id = await createField(DEFAULT_SAVE_ID, input);
         navigate(`/fields/${id}`);
       }
     } catch (err) {

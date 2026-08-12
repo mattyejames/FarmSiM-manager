@@ -13,6 +13,7 @@ export const SEASON_LABELS: Record<Season, string> = {
 
 export interface Field {
   id: string;
+  save_id: string;
   name: string;
   /** The in-game field number, e.g. from the player's own map. User-entered, optional. */
   number: number | null;
@@ -60,6 +61,7 @@ export interface RotationEntryInput {
  * for a crop the player already has. */
 export interface Vehicle {
   id: string;
+  save_id: string;
   name: string;
   category: string;
   notes: string | null;
@@ -77,6 +79,7 @@ export interface VehicleInput {
  * timeline compare rotation entries against. Manually advanced by the user; there's no live
  * game to read it from. Month-level (1-12) since crop reference data is month-precise. */
 export interface GameState {
+  save_id: string;
   current_year: number;
   current_month: number;
 }
@@ -92,9 +95,38 @@ export const BUNDLED_MAP_LABELS: Record<Exclude<MapKey, "custom">, string> = {
   zielonka: "Zielonka",
 };
 
-/** Which map image is currently active — single-farm scope, so one active map is enough. */
+/** Which map image is currently active — single-farm scope, so one active map is enough.
+ * Superseded by Save's own map_key/custom_image once the save picker/wizard lands; kept
+ * (and still backing the map_selection table) until that UI cutover happens. */
 export interface MapSelection {
   map_key: MapKey;
   /** A user-dropped image as a data: URL; only meaningful when map_key === 'custom'. */
   custom_image: string | null;
+}
+
+/** A named container for one farm/savegame — every field, vehicle and game_state row is
+ * scoped to exactly one save via save_id. Locked to one map for its lifetime; changing that
+ * map (see changeSaveMap) clears the save's fields/rotations/vehicles/pins rather than
+ * leaving data that no longer corresponds to real field geography. */
+export interface Save {
+  id: string;
+  name: string;
+  map_key: MapKey;
+  /** A user-dropped image as a data: URL; only meaningful when map_key === 'custom'. */
+  custom_image: string | null;
+  /** Optional label for a custom map; ignored for bundled maps (BUNDLED_MAP_LABELS covers those). */
+  custom_map_name: string | null;
+  /** DLC slugs the player has installed, matching docs/reference/fs25/dlc/*.md filenames.
+   * Informational today; earmarked for DLC-aware crop/equipment coverage (see DLC_CATALOGUE). */
+  dlc_owned: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SaveInput {
+  name: string;
+  map_key: MapKey;
+  custom_image: string | null;
+  custom_map_name: string | null;
+  dlc_owned: string[];
 }

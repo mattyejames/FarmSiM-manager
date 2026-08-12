@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { listFields } from "../lib/queries/fields";
 import { listRotationEntries } from "../lib/queries/rotation";
 import { getMapSelection } from "../lib/queries/map";
+import { DEFAULT_SAVE_ID } from "../lib/queries/saves";
 import { activeMapImage } from "../lib/maps";
 import { dominantCrop } from "../lib/rotationSummary";
 import { estimateYieldIndex } from "../lib/yieldIndex";
@@ -25,7 +26,11 @@ export default function FieldsList() {
   const [filter, setFilter] = useState<Filter>("all");
 
   useEffect(() => {
-    Promise.all([listFields(), listRotationEntries(), getMapSelection()]).then(([f, e, sel]) => {
+    Promise.all([
+      listFields(DEFAULT_SAVE_ID),
+      listRotationEntries(DEFAULT_SAVE_ID),
+      getMapSelection(),
+    ]).then(([f, e, sel]) => {
       setFields(f);
       setEntries(e);
       setMapImage(activeMapImage(sel));

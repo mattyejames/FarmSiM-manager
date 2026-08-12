@@ -2,9 +2,14 @@ import { v4 as uuidv4 } from "uuid";
 import { getDb } from "../db";
 import type { RotationEntry, RotationEntryInput } from "../types";
 
-export async function listRotationEntries(): Promise<RotationEntry[]> {
+export async function listRotationEntries(saveId: string): Promise<RotationEntry[]> {
   const db = await getDb();
-  return db.select<RotationEntry[]>("SELECT * FROM rotation_entry");
+  return db.select<RotationEntry[]>(
+    `SELECT rotation_entry.* FROM rotation_entry
+     JOIN field ON field.id = rotation_entry.field_id
+     WHERE field.save_id = $1`,
+    [saveId],
+  );
 }
 
 export async function listRotationEntriesForField(fieldId: string): Promise<RotationEntry[]> {

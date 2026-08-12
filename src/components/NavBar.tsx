@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { listFields } from "../lib/queries/fields";
+import { DEFAULT_SAVE_ID } from "../lib/queries/saves";
 import { useGameState } from "../lib/gameStateContext";
 import { monthLabel } from "../lib/calendar";
 
@@ -19,7 +20,7 @@ export default function NavBar() {
   const [fieldCount, setFieldCount] = useState<number | null>(null);
 
   useEffect(() => {
-    listFields().then((f) => setFieldCount(f.length));
+    listFields(DEFAULT_SAVE_ID).then((f) => setFieldCount(f.length));
   }, [location.pathname]);
 
   return (
