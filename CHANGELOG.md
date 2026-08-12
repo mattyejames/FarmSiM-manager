@@ -3,6 +3,16 @@
 All notable changes to FarmSiM Manager are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- **Field operations reference in-app** — Field Detail now has a collapsible "Field operations
+  reference" panel showing the general yield-factor, weed-stage-tool, and fertilizing/liming/
+  plowing rules from `fieldOperations.ts`. The Rotation Cell editor now also lists a selected
+  crop's full field-operation sequence (from `crops.ts`), so the reference data collected for
+  both files is now surfaced in the UI instead of only being loaded.
+
 ## [1.0.0] - 2026-08-12
 
 The first tagged release. Earlier iterative work (fields, the original rotation planner,
