@@ -33,6 +33,7 @@ There is currently no test suite and no linter configured — `npx tsc --noEmit`
   - `upsertRotationEntry` implements insert-or-update semantics keyed on the `(field_id, year, season)` unique constraint — it does a `SELECT` first to decide whether to `INSERT` or `UPDATE`, since SQLite upsert-on-conflict isn't used here.
 - `src/lib/crops.ts` — the crop reference table: full field-operation sequence (with the generic machine category each step needs), month-level sow/harvest windows, and season-level sow/harvest windows derived from those months. Sourced from the official Farming Simulator Academy tutorial series, not hand-guessed. Not database-backed by design; hand-edit this array to add/correct crops. `EQUIPMENT_CATEGORIES` is derived from every distinct `machine` string across all crops' operations, so it can't drift out of sync as `crops.ts` changes.
 - `src/lib/fieldOperations.ts` — general field-operation rules that apply across most crops (yield factors, weed-stage tools, liming/plowing cadence), also sourced from the FS Academy material. Reference data only — not yet wired into a specific screen.
+- `src/lib/animals.ts`, `src/lib/forestry.ts`, `src/lib/fishing.ts`, `src/lib/loaders.ts` — reference data for domains the app doesn't implement yet (animal husbandry, forestry, fishing/aquaculture, and the loader/attachment equipment they depend on), sourced from the same FS Academy material. Same "hand-edit, not database-backed" approach as `crops.ts`. Kept ready for when one of these becomes an actual feature — see "Future domains" below.
 - `src/lib/calendar.ts` — the month↔season mapping (`seasonForMonth`, `seasonsFromMonths`), month labels/formatting (`monthLabel`, `formatMonthRange`), and `shiftMonth` for advancing/rewinding `game_state`.
 - `src/lib/soilSuggestions.ts` — static soil-type suggestions, same "not database-backed, hand-edit to add options" approach as `crops.ts`.
 - `src/lib/tasks.ts` — `tasksForMonth()` derives a month's sow/harvest task list purely from `field` + `rotation_entry` + `crops.ts`'s month data, no persistence of its own; each task also carries the crop's deduped `machines` list for the equipment checklist shown against it.
@@ -62,6 +63,14 @@ There is currently no test suite and no linter configured — `npx tsc --noEmit`
 ### Bundled map images
 
 `src/assets/maps/*.jpg` are derived from official FS25 map-guide PDFs the user supplied, shipped as default map options. These are third-party artwork, not originals — if you're forking or redistributing this repo, verify you have the right to bundle them; this was a deliberate, informed call by the app's maintainer, not a cleared license.
+
+### Reference material
+
+`docs/reference/fs25/` is the full raw source bundle the reference-data files above (`crops.ts`, `fieldOperations.ts`, `animals.ts`, `forestry.ts`, `fishing.ts`, `loaders.ts`) were built from — compiled offline notes from the official Farming Simulator Academy tutorials and the FS25 DLC pages, supplied by the user, kept in the repo for provenance and so future sessions don't need it re-uploaded. Two files there (`game-basics.md`, `machinery-101.md` beyond the loader taxonomy already in `loaders.ts`) and the `dlc/` subfolder are *not* yet distilled into any `src/lib/*.ts` module — they're settings/UI/DLC-catalogue material that's more useful as prose than as typed data, but worth reading before building a feature that touches game settings, shop mechanics, or DLC-gated content. Each markdown file documents its own source articles and flags where the Academy's own text is ambiguous, contradictory, or FS22-era rather than confirmed FS25 — treat those flags as real caveats when using the data, not just commentary.
+
+### Future domains (reference data ready, not yet features)
+
+Animal husbandry, forestry, and fishing/aquaculture are not implemented — no screens, routes, or schema — but their reference data is ingested (see `animals.ts`, `forestry.ts`, `fishing.ts`, `loaders.ts` above) so a future feature can start from real FS25 facts instead of re-research. None of this is in the explicit non-goals below; it's simply not built yet. If asked to build one of these out, treat it as a new domain parallel to crops/fields: it will likely want its own migration (barns/pastures, tree stands, or fish lakes as a table alongside `field`), its own `src/lib/queries/*.ts`, and its own route — follow the existing crop-rotation screens as the structural template rather than bolting it onto `field`.
 
 ## Distribution
 
