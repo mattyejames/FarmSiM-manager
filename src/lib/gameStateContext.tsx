@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { getGameState, setGameState, shiftSeason } from "./queries/gameState";
+import { getGameState, setGameState } from "./queries/gameState";
+import { shiftMonth } from "./calendar";
 import type { GameState } from "./types";
 
 interface GameStateContextValue {
@@ -10,8 +11,8 @@ interface GameStateContextValue {
 
 const GameStateContext = createContext<GameStateContextValue | null>(null);
 
-/** Hoists the current-year/season stepper (shown persistently in the nav sidebar) above the
- * routed screens, so advancing the season from the sidebar is reflected everywhere without
+/** Hoists the current-year/month stepper (shown persistently in the nav sidebar) above the
+ * routed screens, so advancing the month from the sidebar is reflected everywhere without
  * each screen polling independently. */
 export function GameStateProvider({ children }: { children: ReactNode }) {
   const [gameState, setGameStateLocal] = useState<GameState | null>(null);
@@ -23,7 +24,7 @@ export function GameStateProvider({ children }: { children: ReactNode }) {
   const shift = useCallback(
     async (direction: 1 | -1) => {
       if (!gameState) return;
-      const next = shiftSeason(gameState, direction);
+      const next = shiftMonth(gameState, direction);
       setGameStateLocal(next);
       await setGameState(next);
     },

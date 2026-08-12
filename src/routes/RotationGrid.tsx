@@ -7,6 +7,7 @@ import PageHeader from "../components/ui/PageHeader";
 import Button from "../components/ui/Button";
 import { dominantCrop } from "../lib/rotationSummary";
 import { useGameState } from "../lib/gameStateContext";
+import { seasonForMonth } from "../lib/calendar";
 import { SEASONS, SEASON_LABELS } from "../lib/types";
 import type { Field, RotationEntry, Season } from "../lib/types";
 import { NO_CROP_LABEL } from "../lib/crops";
@@ -185,7 +186,7 @@ export default function RotationGrid() {
             selected.field.soil_type ? ` · ${selected.field.soil_type.toUpperCase()}` : ""
           }`}
           year={selected.year}
-          initialSeason={gameState?.current_season ?? "SPRING"}
+          initialSeason={gameState ? seasonForMonth(gameState.current_month) : "SPRING"}
           entriesBySeason={Object.fromEntries(
             SEASONS.map((s) => [s, entryMap.get(entryKey(selected.field.id, selected.year, s))]),
           )}

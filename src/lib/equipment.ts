@@ -1,96 +1,52 @@
-import { CROPS, getCropInfo } from "./crops";
-import type { CropInfo } from "./crops";
-import type { Field, RotationEntry, Vehicle } from "./types";
+import { CROPS, EQUIPMENT_CATEGORIES, getCropInfo } from "./crops";
 import { dominantCrop } from "./rotationSummary";
+import type { Field, RotationEntry, Vehicle } from "./types";
 
-/** Fixed category list vehicles/implements are classified into. Free text on `vehicle.category`
- * (not an enum/FK) — these are just the suggestions shown in the picker, matched by name. */
-export const EQUIPMENT_CATEGORIES = [
-  "Tractor",
-  "Plow",
-  "Cultivator",
-  "Seeder",
-  "Planter",
-  "Fertilizer spreader/sprayer",
-  "Combine + grain header",
-  "Potato harvester",
-  "Forage harvester + forage header",
-  "Weeder",
-  "Mulcher",
-  "Trailer",
-] as const;
+export interface EquipmentCheck {
+  machine: string;
+  owned: boolean;
+}
 
-export type EquipmentCategory = (typeof EQUIPMENT_CATEGORIES)[number];
+export function ownedCategorySet(vehicles: Vehicle[]): Set<string> {
+  return new Set(vehicles.map((v) => v.category));
+}
 
-const PLANTED_CROPS = new Set(["Potato", "Sugar Beet", "Sugarcane", "Carrots", "Parsnips", "Red Beet", "Corn (Maize)"]);
-const COMBINE_CROPS = new Set([
-  "Wheat", "Barley", "Oat", "Canola (Oilseed Rape)", "Sunflower", "Soybean",
-  "Corn (Maize)", "Sorghum", "Rice", "Long Grain Rice", "Peas", "Green Beans",
-]);
+/** Checks a crop's required machine categories against what the player owns. */
+export function checkEquipment(machines: string[], owned: Set<string>): EquipmentCheck[] {
+  return machines.map((machine) => ({ machine, owned: owned.has(machine) }));
+}
 
-/**
- * Rough, hand-maintained mapping from crop to the equipment categories it typically needs —
- * built from the equipment hints already in crops.ts's free-text `note` fields, since CropInfo
- * has no structured equipment data. Not exhaustive: perennials/specialty crops without a
- * matching bundled category (Grapes, Olives, Poplar, Cotton) are approximated with the base
- * set only, rather than force-fit into a category that doesn't really apply.
- */
-export function categoriesForCrop(cropName: string): EquipmentCategory[] {
+/** Every machine category a crop's full field-operation sequence needs, deduped. */
+export function categoriesForCrop(cropName: string): string[] {
   const info = getCropInfo(cropName);
   if (!info) return [];
-
-  if (cropName === "Grass") {
-    return ["Tractor", "Fertilizer spreader/sprayer", "Trailer", "Forage harvester + forage header"];
-  }
-
-  const categories = new Set<EquipmentCategory>(["Tractor", "Fertilizer spreader/sprayer", "Trailer"]);
-
-  const isTilledType: CropInfo["growthType"][] = ["annual", "ratoon"];
-  if (isTilledType.includes(info.growthType)) {
-    categories.add("Plow");
-    categories.add("Cultivator");
-    categories.add("Weeder");
-  }
-
-  if (cropName === "Potato") {
-    categories.add("Planter");
-    categories.add("Potato harvester");
-  } else if (PLANTED_CROPS.has(cropName)) {
-    categories.add("Planter");
-  } else if (info.growthType === "annual" || info.growthType === "ratoon") {
-    categories.add("Seeder");
-  }
-
-  if (COMBINE_CROPS.has(cropName)) {
-    categories.add("Combine + grain header");
-    categories.add("Mulcher");
-  }
-
-  return [...categories];
+  return Array.from(new Set(info.operations.map((op) => op.machine).filter((m): m is string => Boolean(m))));
 }
 
 export interface CoverageGap {
-  category: EquipmentCategory;
+  category: string;
   /** Crop names that need this category but no owned vehicle covers it. */
   neededBy: string[];
 }
 
 export interface CoverageResult {
   totalCategories: number;
-  covered: EquipmentCategory[];
+  covered: string[];
   missing: CoverageGap[];
   percent: number;
 }
 
-/** Which equipment categories the current rotation needs, vs. what's covered by owned vehicles. */
+/** Which equipment categories the current rotation needs (via each field's dominant crop for
+ * the year), vs. what's covered by owned vehicles. Categories themselves come from
+ * EQUIPMENT_CATEGORIES (crops.ts, derived from real per-crop operations), not a guess. */
 export function coverageForRotation(
   vehicles: Vehicle[],
   fields: Field[],
   entries: RotationEntry[],
 ): CoverageResult {
-  const ownedCategories = new Set(vehicles.map((v) => v.category));
+  const owned = ownedCategorySet(vehicles);
 
-  const neededBy = new Map<EquipmentCategory, Set<string>>();
+  const neededBy = new Map<string, Set<string>>();
   for (const field of fields) {
     const fieldEntries = entries.filter((e) => e.field_id === field.id);
     const years = [...new Set(fieldEntries.map((e) => e.year))];
@@ -106,9 +62,9 @@ export function coverageForRotation(
   }
 
   const neededCategories = [...neededBy.keys()];
-  const covered = neededCategories.filter((c) => ownedCategories.has(c));
+  const covered = neededCategories.filter((c) => owned.has(c));
   const missing: CoverageGap[] = neededCategories
-    .filter((c) => !ownedCategories.has(c))
+    .filter((c) => !owned.has(c))
     .map((category) => ({ category, neededBy: [...(neededBy.get(category) ?? [])] }));
 
   return {
@@ -120,6 +76,8 @@ export function coverageForRotation(
 }
 
 /** How many crops (out of the full FS25 list) a category is used by — shown as context in the Vehicles screen. */
-export function cropCountForCategory(category: EquipmentCategory): number {
+export function cropCountForCategory(category: string): number {
   return CROPS.filter((c) => categoriesForCrop(c.name).includes(category)).length;
 }
+
+export { EQUIPMENT_CATEGORIES };

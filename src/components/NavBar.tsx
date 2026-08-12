@@ -2,12 +2,13 @@ import { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { listFields } from "../lib/queries/fields";
 import { useGameState } from "../lib/gameStateContext";
-import { SEASON_LABELS } from "../lib/types";
+import { monthLabel } from "../lib/calendar";
 
 const LINKS = [
   { to: "/", label: "Dashboard", end: true, countKey: null },
   { to: "/fields", label: "Fields", end: false, countKey: "fields" as const },
   { to: "/rotation", label: "Rotation", end: false, countKey: null },
+  { to: "/timeline", label: "Timeline", end: false, countKey: null },
   { to: "/vehicles", label: "Vehicles", end: false, countKey: null },
   { to: "/map", label: "Map", end: false, countKey: null },
 ];
@@ -32,13 +33,13 @@ export default function NavBar() {
         </div>
         <div className="flex items-center justify-between rounded-[5px] border border-border bg-surface-4 px-2.5 py-1.5">
           <span className="font-mono text-[10.5px] tracking-wide text-text-faint">
-            {gameState ? `YEAR ${gameState.current_year} · ${SEASON_LABELS[gameState.current_season].toUpperCase()}` : "…"}
+            {gameState ? `YEAR ${gameState.current_year} · ${monthLabel(gameState.current_month).toUpperCase()}` : "…"}
           </span>
           <div className="flex gap-0.5">
             <button
               type="button"
               onClick={() => shift(-1)}
-              aria-label="Previous season"
+              aria-label="Previous month"
               className="flex h-4 w-4 items-center justify-center rounded-[3px] bg-surface-hover text-[10px] text-text-dimmer hover:text-text"
             >
               ‹
@@ -46,7 +47,7 @@ export default function NavBar() {
             <button
               type="button"
               onClick={() => shift(1)}
-              aria-label="Next season"
+              aria-label="Next month"
               className="flex h-4 w-4 items-center justify-center rounded-[3px] bg-surface-hover text-[10px] text-text-dimmer hover:text-text"
             >
               ›

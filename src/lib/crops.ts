@@ -1,218 +1,506 @@
 import type { Season } from "./types";
+import { seasonsFromMonths } from "./calendar";
 
 export type CropGrowthType = "annual" | "perennial" | "ratoon" | "forage";
 
-/** How well-corroborated a crop's season data is across FS25 wiki/community sources. */
+/** How well-corroborated a crop's data is against the source material. */
 export type CropDataConfidence = "high" | "medium" | "low";
+
+export interface CropOperationStep {
+  /** Short label for the step, e.g. "Fertilize (1st pass)". */
+  step: string;
+  /** Generic machine/implement category needed, e.g. "Cultivator". Omitted for non-machine steps. */
+  machine?: string;
+  /** Yield-boosting but not required to get a harvest. */
+  optional?: boolean;
+}
 
 export interface CropInfo {
   name: string;
   growthType: CropGrowthType;
-  /** Seasons this crop is normally sown in (default FS25 Seasonal Growth timing). */
+  /** Seasons this crop is normally sown in, derived from sowMonths. */
   sowSeasons: Season[];
-  /** Seasons this crop is normally ready to harvest in. */
+  /** Seasons this crop is normally ready to harvest in, derived from harvestMonths. */
   harvestSeasons: Season[];
-  /** Extra agronomic detail worth surfacing to the player (equipment, paddy, etc). */
+  /** Months (1-12) this crop is normally sown/planted in. */
+  sowMonths: number[];
+  /** Months (1-12) this crop is normally ready to harvest in. */
+  harvestMonths: number[];
+  /** Full field-operation sequence, in order, with the machine category each step needs. */
+  operations: CropOperationStep[];
+  /** Harvesters are shared across crops in the same group (e.g. one combine + grain header). */
+  harvesterGroup?: string;
+  /** Extra agronomic detail worth surfacing to the player. */
   note?: string;
   confidence: CropDataConfidence;
 }
 
-const ALL_SEASONS: Season[] = ["SPRING", "SUMMER", "AUTUMN", "WINTER"];
+const ALL_MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
+
+type RawCrop = Omit<CropInfo, "sowSeasons" | "harvestSeasons">;
 
 /**
- * Reference data for FS25 base-game crops: typical sow/harvest seasons under default
- * Seasonal Growth settings, growth behavior, and any special handling. Hand-maintained
- * against the FS25 wiki — not exhaustive or authoritative, since exact windows can shift
- * with fertilization, map, and per-save calendar settings. Confidence reflects how well
- * sources agreed; treat "low"/"medium" entries as a rough guide, not a hard rule.
+ * Reference data for FS25 base-game crops: full field-operation sequence, machine category
+ * per step, and month-level sow/harvest timing.
+ *
+ * Sourced from the official Farming Simulator Academy "Crops 101" tutorial series
+ * (farming-simulator.com/newsArticle.php?news_id=280 and its per-crop articles) and the
+ * companion "Ground Working 101" series, compiled 2026-08. Month windows and procedures are
+ * primary-sourced and high-confidence; named equipment in the source skews FS22-era, so this
+ * file intentionally uses generic machine categories rather than brand/model names, which the
+ * Academy itself warns may not carry over to FS25. "Grass" is not covered by the Crops 101
+ * series (it's forage, not a sown field crop) and keeps its confidence from earlier secondary
+ * research. A few figures the source itself doesn't state (Spinach's exact harvest months) are
+ * flagged in that crop's note.
  */
-export const CROPS: CropInfo[] = [
+const RAW_CROPS: RawCrop[] = [
+  // ---- Grains & oilseeds: share one combine + grain header (7-crop group incl. Long Grain Rice) ----
   {
     name: "Wheat",
     growthType: "annual",
-    sowSeasons: ["AUTUMN"],
-    harvestSeasons: ["SUMMER"],
-    note: "Overwinters after autumn sowing; harvested the following summer.",
+    sowMonths: [9, 10],
+    harvestMonths: [7, 8],
+    harvesterGroup: "grain-header",
+    operations: [
+      { step: "Lime", machine: "Fertilizer spreader", optional: true },
+      { step: "Cultivate", machine: "Cultivator" },
+      { step: "Sow", machine: "Seeder" },
+      { step: "Fertilize (1st pass)", machine: "Fertilizer spreader/sprayer" },
+      { step: "Weed control", machine: "Weeder, then sprayer if severe" },
+      { step: "Fertilize (2nd pass, after a growth stage)", machine: "Fertilizer spreader/sprayer" },
+      { step: "Harvest — activate straw swath for straw", machine: "Combine + grain header" },
+      { step: "Mulch stubble before next cultivation", machine: "Mulcher", optional: true },
+    ],
+    note: "Overwinters after autumn sowing — the Academy states a 10-month cycle to the following summer's harvest.",
     confidence: "high",
   },
   {
     name: "Barley",
     growthType: "annual",
-    sowSeasons: ["AUTUMN"],
-    harvestSeasons: ["SUMMER"],
-    note: "Overwinters after autumn sowing; harvested the following summer.",
-    confidence: "medium",
+    sowMonths: [9, 10],
+    harvestMonths: [6, 7],
+    harvesterGroup: "grain-header",
+    operations: [
+      { step: "Lime", machine: "Fertilizer spreader", optional: true },
+      { step: "Cultivate", machine: "Cultivator" },
+      { step: "Sow", machine: "Seeder" },
+      { step: "Fertilize (1st pass)", machine: "Fertilizer spreader/sprayer" },
+      { step: "Weed control", machine: "Weeder, then sprayer if severe" },
+      { step: "Fertilize (2nd pass, after a growth stage)", machine: "Fertilizer spreader/sprayer" },
+      { step: "Harvest — activate straw swath for straw", machine: "Combine + grain header" },
+      { step: "Mulch stubble before next cultivation", machine: "Mulcher", optional: true },
+    ],
+    note: "Overwinters after autumn sowing; earliest harvest of any grain (June–July).",
+    confidence: "high",
   },
   {
     name: "Oat",
     growthType: "annual",
-    sowSeasons: ["SPRING"],
-    harvestSeasons: ["SUMMER"],
+    sowMonths: [3, 4],
+    harvestMonths: [7, 8],
+    harvesterGroup: "grain-header",
+    operations: [
+      { step: "Lime", machine: "Fertilizer spreader", optional: true },
+      { step: "Cultivate", machine: "Cultivator" },
+      { step: "Sow", machine: "Seeder" },
+      { step: "Fertilize (1st pass)", machine: "Fertilizer spreader/sprayer" },
+      { step: "Weed control", machine: "Weeder, then sprayer if severe" },
+      { step: "Fertilize (2nd pass, after a growth stage)", machine: "Fertilizer spreader/sprayer" },
+      { step: "Harvest — activate straw swath for straw", machine: "Combine + grain header" },
+      { step: "Mulch stubble before next cultivation", machine: "Mulcher", optional: true },
+    ],
     confidence: "high",
   },
   {
     name: "Canola (Oilseed Rape)",
     growthType: "annual",
-    sowSeasons: ["AUTUMN"],
-    harvestSeasons: ["SUMMER"],
-    note: "Overwinters after autumn sowing. Sources disagree on the exact sow window.",
-    confidence: "medium",
+    sowMonths: [8, 9],
+    harvestMonths: [7, 8],
+    harvesterGroup: "grain-header",
+    operations: [
+      { step: "Lime", machine: "Fertilizer spreader", optional: true },
+      { step: "Cultivate", machine: "Cultivator" },
+      { step: "Sow", machine: "Seeder" },
+      { step: "Fertilize (1st pass)", machine: "Fertilizer spreader/sprayer" },
+      { step: "Weed control", machine: "Weeder, then sprayer if severe" },
+      { step: "Fertilize (2nd pass, after a growth stage)", machine: "Fertilizer spreader/sprayer" },
+      { step: "Harvest", machine: "Combine + grain header" },
+      { step: "Place a beehive nearby", optional: true },
+    ],
+    note: "Overwinters after autumn sowing. On a fresh seasonal save (game starts in August) canola is the only crop sowable at that point.",
+    confidence: "high",
   },
   {
-    name: "Sunflower",
+    name: "Sorghum",
     growthType: "annual",
-    sowSeasons: ["SPRING"],
-    harvestSeasons: ["AUTUMN"],
-    note: "Combine needs a dedicated sunflower header.",
+    sowMonths: [4, 5],
+    harvestMonths: [8, 9],
+    harvesterGroup: "grain-header",
+    operations: [
+      { step: "Lime", machine: "Fertilizer spreader", optional: true },
+      { step: "Cultivate", machine: "Cultivator" },
+      { step: "Sow", machine: "Planter" },
+      { step: "Fertilize (1st pass)", machine: "Fertilizer spreader/sprayer" },
+      { step: "Weed control", machine: "Weeder, then sprayer if severe" },
+      { step: "Fertilize (2nd pass, after a growth stage)", machine: "Fertilizer spreader/sprayer" },
+      { step: "Harvest", machine: "Combine + grain header" },
+    ],
+    note: "Source disagreement on sowing machine: the general seeding guide lists sorghum as seeder-sown, but the sorghum-specific tutorial calls for a planter — check the crop icon in-shop.",
     confidence: "high",
   },
   {
     name: "Soybean",
     growthType: "annual",
-    sowSeasons: ["SPRING"],
-    harvestSeasons: ["AUTUMN"],
+    sowMonths: [4, 5],
+    harvestMonths: [10, 11],
+    harvesterGroup: "grain-header",
+    operations: [
+      { step: "Lime", machine: "Fertilizer spreader", optional: true },
+      { step: "Cultivate", machine: "Cultivator" },
+      { step: "Sow", machine: "Planter" },
+      { step: "Fertilize (1st pass)", machine: "Fertilizer spreader/sprayer" },
+      { step: "Weed control", machine: "Weeder, then sprayer if severe" },
+      { step: "Fertilize (2nd pass, after a growth stage)", machine: "Fertilizer spreader/sprayer" },
+      { step: "Harvest", machine: "Combine + grain header" },
+    ],
     confidence: "high",
   },
+  {
+    name: "Long Grain Rice",
+    growthType: "annual",
+    sowMonths: [4],
+    harvestMonths: [9],
+    harvesterGroup: "grain-header",
+    operations: [
+      { step: "Place a rice paddy (build mode, once)" },
+      { step: "Sow — dry, not into water", machine: "Seeder" },
+      { step: "Flood the paddy (after sowing)", machine: "Water pump" },
+      { step: "Maintain water level — check the pump daily" },
+      { step: "Fertilize — a single pass only, unlike other crops", machine: "Seeder/spreader" },
+      { step: "Harvest", machine: "Combine + grain header" },
+      { step: "To regrow: cultivate the paddy — no need to re-place it", machine: "Cultivator" },
+      { step: "Lime every 3rd harvest (new paddies don't need it)", machine: "Fertilizer spreader", optional: true },
+    ],
+    note: "Dry-sown, then flooded after sowing — unlike regular Rice. Uses a standard grain header at harvest, unlike regular Rice's dedicated harvester.",
+    confidence: "high",
+  },
+
+  // ---- Rice (own harvester, not the grain-header group) ----
+  {
+    name: "Rice",
+    growthType: "annual",
+    sowMonths: [4, 5],
+    harvestMonths: [8, 9],
+    operations: [
+      { step: "Place a rice paddy (build mode, once)" },
+      { step: "Sow directly into water — fertilizer is loaded into the planter", machine: "Special rice planter" },
+      { step: "Flood & maintain water at or below 60% — check the pump daily" },
+      { step: "Harvest", machine: "Dedicated rice harvester (not a grain header)" },
+      { step: "To regrow: cultivate the paddy — no need to re-place it", machine: "Cultivator" },
+      { step: "Lime every 3rd harvest (new paddies don't need it)", machine: "Fertilizer spreader", optional: true },
+    ],
+    note: "Paddy is flooded before sowing, and fertilizer is applied via the planter, not a separate pass. Rice saplings can also be grown in a specialized greenhouse.",
+    confidence: "high",
+  },
+
+  // ---- Row crops with dedicated headers ----
   {
     name: "Corn (Maize)",
     growthType: "annual",
-    sowSeasons: ["SPRING"],
-    harvestSeasons: ["AUTUMN"],
-    note: "Combine needs a dedicated corn header.",
+    sowMonths: [4, 5],
+    harvestMonths: [10, 11],
+    operations: [
+      { step: "Plow (required, not just cultivate)", machine: "Plow" },
+      { step: "Sow", machine: "Planter" },
+      { step: "Fertilize", machine: "Fertilizer spreader/sprayer" },
+      { step: "Weed control", machine: "Weeder, then sprayer if severe" },
+      { step: "Harvest chaff for silage (earlier window, Aug–Sep)", machine: "Forage harvester + forage header", optional: true },
+      { step: "Harvest maize", machine: "Combine + dedicated corn header" },
+      { step: "Plow again after harvest", machine: "Plow" },
+    ],
+    note: "Two separate harvests: chaff for silage (Aug–Sep) and the main maize harvest (Oct–Nov). Corn is American English, maize British — same crop.",
     confidence: "high",
   },
   {
+    name: "Sunflower",
+    growthType: "annual",
+    sowMonths: [3, 4],
+    harvestMonths: [10, 11],
+    harvesterGroup: "corn-header",
+    operations: [
+      { step: "Cultivate (plow only if the field info box asks)", machine: "Cultivator" },
+      { step: "Sow", machine: "Planter" },
+      { step: "Fertilize", machine: "Fertilizer spreader/sprayer" },
+      { step: "Weed control", machine: "Weeder, then sprayer if severe" },
+      { step: "Harvest", machine: "Combine + sunflower header (or corn header)" },
+      { step: "Place a beehive nearby", optional: true },
+    ],
+    note: "Harvestable with either a dedicated sunflower header or a corn header — free to harvest if you already own one for corn. Silo-storable, unlike most specialty crops.",
+    confidence: "high",
+  },
+  {
+    name: "Cotton",
+    growthType: "annual",
+    sowMonths: [2, 3],
+    harvestMonths: [10, 11],
+    operations: [
+      { step: "Cultivate", machine: "Cultivator" },
+      { step: "Sow", machine: "Seed drill/planter" },
+      { step: "Fertilize", machine: "Fertilizer spreader/sprayer" },
+      { step: "Plow when changing crops / every 3rd harvest (cadence disputed — check field info)", machine: "Plow" },
+      { step: "Harvest (min. 2,000 L to unload a bale; up to 20,000 L per module)", machine: "Module-building cotton harvester (no header)" },
+      { step: "Collect modules", machine: "Dedicated cotton/module trailer" },
+    ],
+    note: "Earliest planting window of any crop (Feb–Mar). Not silo-storable — sold only at the spinnery. The Academy calls it \"quite expensive\" and recommends renting the harvester.",
+    confidence: "high",
+  },
+
+  // ---- Root & tuber crops ----
+  {
     name: "Potato",
     growthType: "annual",
-    sowSeasons: ["SPRING"],
-    harvestSeasons: ["SUMMER", "AUTUMN"],
-    note: "Needs a dedicated potato planter and harvester.",
+    sowMonths: [3, 4],
+    harvestMonths: [8, 9],
+    operations: [
+      { step: "Subsoiler (not a cultivator)", machine: "Subsoiler" },
+      { step: "Plant — harvested potatoes can refill the planter", machine: "Potato planter" },
+      { step: "Hoe — a row crop, not weeder-compatible", machine: "Hoe" },
+      { step: "Fertilize", machine: "Fertilizer spreader/sprayer", optional: true },
+      { step: "Harvest", machine: "Dedicated potato harvester" },
+    ],
     confidence: "high",
   },
   {
     name: "Sugar Beet",
     growthType: "annual",
-    sowSeasons: ["SPRING"],
-    harvestSeasons: ["AUTUMN"],
-    note: "Needs a dedicated root harvester.",
+    sowMonths: [3, 4],
+    harvestMonths: [10, 11],
+    operations: [
+      { step: "Subsoiler — used every pass instead of alternating cultivator/plow", machine: "Subsoiler" },
+      { step: "Sow — some planters fertilize simultaneously", machine: "Sugar beet planter" },
+      { step: "Fertilize (2nd pass needs the spreader, not the planter)", machine: "Fertilizer spreader" },
+      { step: "Weed control", machine: "Weeder, then sprayer if severe" },
+      { step: "Top the haulms, then lift — a beet combine does both, or pair a topper + harvester", machine: "Haulm topper + beet harvester (~185 hp)" },
+      { step: "Plow (cadence disputed in source — every harvest vs every 3rd; check field info)", machine: "Plow" },
+    ],
+    note: "Withers after November if not harvested. Not silo-storable — unload on the ground.",
     confidence: "high",
   },
   {
-    name: "Sugarcane",
-    growthType: "ratoon",
-    sowSeasons: ["SPRING"],
-    harvestSeasons: ["AUTUMN"],
-    note: "Regrows after harvest without replanting for about 3 harvests, then needs replowing.",
-    confidence: "medium",
+    name: "Carrots",
+    growthType: "annual",
+    sowMonths: [4, 5, 6, 7],
+    harvestMonths: [8, 9, 10, 11],
+    harvesterGroup: "root-shared",
+    operations: [
+      { step: "Attach front weights — required for rear-mounted gear" },
+      { step: "Subsoiler (not a plow)", machine: "Subsoiler" },
+      { step: "Ridge-form — counts as a fertilizing stage, cuts required fertilizer passes to one", machine: "Ridge former", optional: true },
+      { step: "Sow", machine: "Vegetable planter" },
+      { step: "Hoe — a row crop, not weeder-compatible", machine: "Hoe" },
+      { step: "Fertilize (once if ridged, twice if not)", machine: "Fertilizer spreader/sprayer" },
+      { step: "Harvest", machine: "Shared root-crop harvester" },
+      { step: "Plow after every harvest", machine: "Plow" },
+    ],
+    note: "Widest sowing window of the root crops. Shares an identical workflow and harvester with Parsnips and Red Beet. Not silo-storable — use the pallet store.",
+    confidence: "high",
   },
   {
-    name: "Cotton",
+    name: "Parsnips",
     growthType: "annual",
-    sowSeasons: ["WINTER", "SPRING"],
-    harvestSeasons: ["AUTUMN"],
-    note: "Needs a dedicated module-building cotton harvester. Season data is disputed across sources.",
-    confidence: "low",
+    sowMonths: [4, 5, 6],
+    harvestMonths: [8, 9, 10, 11],
+    harvesterGroup: "root-shared",
+    operations: [
+      { step: "Attach front weights — required for rear-mounted gear" },
+      { step: "Subsoiler (not a plow)", machine: "Subsoiler" },
+      { step: "Ridge-form — counts as a fertilizing stage, cuts required fertilizer passes to one", machine: "Ridge former", optional: true },
+      { step: "Sow", machine: "Vegetable planter" },
+      { step: "Hoe — a row crop, not weeder-compatible", machine: "Hoe" },
+      { step: "Fertilize (once if ridged, twice if not)", machine: "Fertilizer spreader/sprayer" },
+      { step: "Harvest", machine: "Shared root-crop harvester" },
+      { step: "Plow after every harvest", machine: "Plow" },
+    ],
+    note: "Shares an identical workflow and harvester with Carrots and Red Beet. Not silo-storable — use the pallet store.",
+    confidence: "high",
   },
+  {
+    name: "Red Beet",
+    growthType: "annual",
+    sowMonths: [4, 5, 6],
+    harvestMonths: [8, 9, 10, 11],
+    harvesterGroup: "root-shared",
+    operations: [
+      { step: "Attach front weights — required for rear-mounted gear" },
+      { step: "Subsoiler (not a plow)", machine: "Subsoiler" },
+      { step: "Ridge-form — counts as a fertilizing stage, cuts required fertilizer passes to one", machine: "Ridge former", optional: true },
+      { step: "Sow", machine: "Vegetable planter" },
+      { step: "Hoe — a row crop, not weeder-compatible", machine: "Hoe" },
+      { step: "Fertilize (once if ridged, twice if not)", machine: "Fertilizer spreader/sprayer" },
+      { step: "Harvest", machine: "Shared root-crop harvester" },
+      { step: "Plow after every harvest", machine: "Plow" },
+    ],
+    note: "Also called beetroot. Shares an identical workflow and harvester with Carrots and Parsnips. Not silo-storable — use the pallet store.",
+    confidence: "high",
+  },
+  {
+    name: "Onions",
+    growthType: "annual",
+    sowMonths: [3, 4],
+    harvestMonths: [8, 9],
+    operations: [
+      { step: "Cultivate (not a subsoiler)", machine: "Cultivator" },
+      { step: "Sow", machine: "Special onion planter" },
+      { step: "Weed control — a weeder works here, unlike other row crops", machine: "Weeder" },
+      { step: "Fertilize", machine: "Fertilizer spreader/sprayer" },
+      { step: "Cut foliage & dig (front-mounted)", machine: "Onion harvester" },
+      { step: "Windrow & clean (rear-mounted, same pass)", machine: "Onion windrower" },
+      { step: "Pick up", machine: "Second harvester" },
+      { step: "Top the onions for extra profit", machine: "Onion topper (placeable)", optional: true },
+    ],
+    note: "The most machine-intensive harvest in the game — three machines in sequence. Not currently listed in this app's crop picker until this update; base-game FS25 crop, easy to miss.",
+    confidence: "high",
+  },
+
+  // ---- Orchards & vineyards: built, not sown ----
   {
     name: "Grapes",
     growthType: "perennial",
-    sowSeasons: ["SPRING", "SUMMER"],
-    harvestSeasons: ["AUTUMN"],
-    note: "Planted once via the build menu, then regrows each year — no replanting. Planting window is disputed across sources.",
-    confidence: "low",
+    sowMonths: [3, 4, 5],
+    harvestMonths: [9, 10],
+    operations: [
+      { step: "Build vine rows (once, via Build Menu → Production → orchards)" },
+      { step: "Mulch between rows, once grass grows back", machine: "Mulcher" },
+      { step: "Cultivate between rows", machine: "Slim subsoiler" },
+      { step: "Fertilize — liquid; enable double-application rate to do it in one pass", machine: "Sprayer" },
+      { step: "Harvest — centre the harvester on the row; unload rearward", machine: "Dedicated grape harvester" },
+      { step: "Prune once leaves turn yellow — required, or vines won't fruit again next year", machine: "Leaf cutter / pruner" },
+    ],
+    note: "Planted once; the annual cycle (mulch → cultivate → fertilize → harvest → prune) then repeats every year without replanting. Withers after October if not harvested.",
+    confidence: "high",
   },
   {
     name: "Olives",
     growthType: "perennial",
-    sowSeasons: ["SPRING", "SUMMER"],
-    harvestSeasons: ["AUTUMN"],
-    note: "Planted once via the build menu, then regrows each year. Needs a dedicated olive harvester.",
-    confidence: "low",
+    sowMonths: [8, 9],
+    harvestMonths: [10],
+    operations: [
+      { step: "Build tree rows (once, via Build Menu → Production → orchards)" },
+      { step: "Mulch between rows", machine: "Mulcher" },
+      { step: "Cultivate between rows", machine: "Slim subsoiler" },
+      { step: "Fertilize — liquid", machine: "Sprayer" },
+      { step: "Harvest — centre the harvester on the row; unload rearward", machine: "Dedicated olive harvester" },
+    ],
+    note: "Planted once; the annual cycle then repeats every year without replanting or pruning (unlike Grapes). Withers after October if not harvested.",
+    confidence: "high",
+  },
+
+  // ---- Regrowing crops: plant once, harvest repeatedly ----
+  {
+    name: "Sugarcane",
+    growthType: "ratoon",
+    sowMonths: [3, 4],
+    harvestMonths: [10, 11],
+    operations: [
+      { step: "Sow cuttings (once — no plowing or cultivating first)", machine: "Sugarcane planter" },
+      { step: "Harvest — fills the trailer via the pipe", machine: "Self-propelled or tractor-attached cane harvester" },
+      { step: "Regrows automatically — no replanting needed" },
+      { step: "Plow after the 3rd harvest to avoid a yield penalty, then replant with cuttings from the previous harvest", machine: "Plow", optional: true },
+    ],
+    note: "High yield but low selling price. Not silo-storable.",
+    confidence: "high",
   },
   {
     name: "Poplar",
     growthType: "perennial",
-    sowSeasons: ["SPRING", "SUMMER"],
-    harvestSeasons: ALL_SEASONS,
-    note: "Planted once with a forestry planter; harvestable any time once mature. Maturation time is disputed across sources.",
-    confidence: "low",
+    sowMonths: [3, 4, 5, 6, 7, 8],
+    harvestMonths: ALL_MONTHS,
+    operations: [
+      { step: "Plant saplings (once — no field prep needed)", machine: "Forestry planter" },
+      { step: "Harvest any time once mature — never withers", machine: "Forage harvester + forestry header, or dedicated baler" },
+      { step: "Regrows automatically — no replanting needed" },
+      { step: "Plow after the 3rd harvest to avoid a yield penalty", machine: "Plow", optional: true },
+    ],
+    note: "Never withers, so it carries no timing pressure. A baler route can save nearly $400,000 over the forage-harvester route. Not silo-storable.",
+    confidence: "high",
   },
-  {
-    name: "Sorghum",
-    growthType: "annual",
-    sowSeasons: ["SPRING"],
-    harvestSeasons: ["SUMMER", "AUTUMN"],
-    confidence: "medium",
-  },
-  {
-    name: "Rice",
-    growthType: "annual",
-    sowSeasons: ["SPRING"],
-    harvestSeasons: ["SUMMER"],
-    note: "Requires a flooded rice paddy flooded before sowing, plus a dedicated seeder.",
-    confidence: "medium",
-  },
-  {
-    name: "Long Grain Rice",
-    growthType: "annual",
-    sowSeasons: ["SPRING"],
-    harvestSeasons: ["AUTUMN"],
-    note: "Dry-sown, then the paddy is flooded after sowing (unlike regular Rice).",
-    confidence: "medium",
-  },
+
+  // ---- Spinach / peas / green beans: shared 8-step vegetable workflow ----
   {
     name: "Spinach",
     growthType: "annual",
-    sowSeasons: ["SPRING"],
-    harvestSeasons: ["SUMMER"],
-    note: "Gives two harvests per sowing.",
+    sowMonths: [3, 4, 5],
+    harvestMonths: [6, 8],
+    operations: [
+      { step: "Lime", machine: "Fertilizer spreader", optional: true },
+      { step: "Cultivate", machine: "Cultivator" },
+      { step: "Sow", machine: "Seeder" },
+      { step: "Fertilize", machine: "Fertilizer spreader/sprayer" },
+      { step: "Roll", machine: "Soil roller", optional: true },
+      { step: "Weed control", machine: "Weeder, then sprayer if severe" },
+      { step: "Harvest — regrows once for a 2nd harvest the same year if sown early", machine: "Dedicated leaf harvester" },
+      { step: "Sell or process immediately — cannot be stored at all" },
+    ],
+    note: "Harvest months aren't given precisely by the source (only \"regrows once, 2 harvests\" within the Mar–May growing window) — treat the months above as an approximation.",
     confidence: "medium",
   },
   {
     name: "Peas",
     growthType: "annual",
-    sowSeasons: ["SPRING"],
-    harvestSeasons: ["SUMMER"],
-    confidence: "medium",
+    sowMonths: [4, 5, 6, 7],
+    harvestMonths: [7, 8, 9],
+    operations: [
+      { step: "Lime", machine: "Fertilizer spreader", optional: true },
+      { step: "Cultivate", machine: "Cultivator" },
+      { step: "Sow", machine: "Seeder" },
+      { step: "Fertilize", machine: "Fertilizer spreader/sprayer" },
+      { step: "Roll", machine: "Soil roller", optional: true },
+      { step: "Weed control", machine: "Weeder, then sprayer if severe" },
+      { step: "Harvest — unfold the pipe to unload", machine: "Dedicated pod harvester" },
+    ],
+    confidence: "high",
   },
   {
     name: "Green Beans",
     growthType: "annual",
-    sowSeasons: ["SPRING", "SUMMER"],
-    harvestSeasons: ["SUMMER", "AUTUMN"],
-    note: "Season data is sparse and conflicting across sources.",
-    confidence: "low",
+    sowMonths: [4, 5, 6, 7],
+    harvestMonths: [8, 9, 10, 11],
+    operations: [
+      { step: "Lime", machine: "Fertilizer spreader", optional: true },
+      { step: "Cultivate", machine: "Cultivator" },
+      { step: "Sow", machine: "Planter" },
+      { step: "Fertilize", machine: "Fertilizer spreader/sprayer" },
+      { step: "Roll", machine: "Soil roller", optional: true },
+      { step: "Weed control", machine: "Weeder, then sprayer if severe" },
+      { step: "Harvest — raise the bunker to unload", machine: "Dedicated bean harvester" },
+    ],
+    confidence: "high",
   },
-  {
-    name: "Red Beet",
-    growthType: "annual",
-    sowSeasons: ["SPRING"],
-    harvestSeasons: ["SUMMER", "AUTUMN"],
-    confidence: "medium",
-  },
-  {
-    name: "Carrots",
-    growthType: "annual",
-    sowSeasons: ["SPRING", "SUMMER"],
-    harvestSeasons: ["SUMMER", "AUTUMN"],
-    confidence: "medium",
-  },
-  {
-    name: "Parsnips",
-    growthType: "annual",
-    sowSeasons: ["SPRING"],
-    harvestSeasons: ["SUMMER", "AUTUMN"],
-    confidence: "medium",
-  },
+
+  // ---- Forage: not covered by the Crops 101 series ----
   {
     name: "Grass",
     growthType: "forage",
-    sowSeasons: ["SPRING", "SUMMER", "AUTUMN"],
-    harvestSeasons: ["SPRING", "SUMMER", "AUTUMN"],
-    note: "Multi-cut forage — mowed repeatedly through the growing season rather than replanted each cycle. Dormant in winter.",
+    sowMonths: [3],
+    harvestMonths: [6, 8, 10],
+    operations: [
+      { step: "Mow", machine: "Mower" },
+      { step: "Tedder — dries for hay", machine: "Tedder", optional: true },
+      { step: "Rake / windrow", machine: "Rake/windrower" },
+      { step: "Bale, or forage-harvest directly", machine: "Baler, or forage harvester + pickup header" },
+      { step: "Wrap — silage bales only", machine: "Bale wrapper", optional: true },
+      { step: "Fertilize — only one pass possible for grass, unlike other crops", machine: "Grass roller / fertilizer spreader" },
+    ],
+    note: "Not covered by the Crops 101 series (it's forage, not a sown field crop), so this entry keeps its confidence from earlier secondary research. Rolling after mowing grants an automatic fertilizing-stage bonus, but rolling over already-mature grass resets its growth stage.",
     confidence: "medium",
   },
 ];
+
+export const CROPS: CropInfo[] = RAW_CROPS.map((crop) => ({
+  ...crop,
+  sowSeasons: seasonsFromMonths(crop.sowMonths),
+  harvestSeasons: seasonsFromMonths(crop.harvestMonths),
+}));
 
 export const CROP_NAMES = CROPS.map((c) => c.name);
 
@@ -223,5 +511,14 @@ export function getCropInfo(name: string | null): CropInfo | undefined {
   return CROPS.find((c) => c.name === name);
 }
 
+/** Every distinct machine category referenced across all crops' operations, derived rather
+ * than hand-maintained so it can't drift out of sync as crops.ts changes. Used as the fixed
+ * vocabulary for vehicle-inventory categories, so ownership can be matched by exact string. */
+export const EQUIPMENT_CATEGORIES: string[] = Array.from(
+  new Set(CROPS.flatMap((c) => c.operations.map((op) => op.machine).filter((m): m is string => Boolean(m)))),
+).sort((a, b) => a.localeCompare(b));
+
 /** Sentinel used in selects for "no crop planned" — stored as null in the DB. */
 export const NO_CROP_LABEL = "Fallow / No Crop";
+
+export { formatMonthRange } from "./calendar";

@@ -5,6 +5,7 @@ import FieldsList from "./routes/FieldsList";
 import FieldForm from "./routes/FieldForm";
 import FieldDetail from "./routes/FieldDetail";
 import RotationGrid from "./routes/RotationGrid";
+import Timeline from "./routes/Timeline";
 import Vehicles from "./routes/Vehicles";
 import MapScreen from "./routes/Map";
 import { GameStateProvider } from "./lib/gameStateContext";
@@ -22,6 +23,7 @@ export default function App() {
             <Route path="/fields/:fieldId" element={<FieldDetail />} />
             <Route path="/fields/:fieldId/edit" element={<FieldForm />} />
             <Route path="/rotation" element={<RotationGrid />} />
+            <Route path="/timeline" element={<Timeline />} />
             <Route path="/vehicles" element={<Vehicles />} />
             <Route path="/map" element={<MapScreen />} />
           </Routes>

@@ -17,20 +17,26 @@ pub fn run() {
         },
         Migration {
             version: 3,
-            description: "add_field_number",
-            sql: include_str!("../migrations/003_field_number.sql"),
+            description: "add_game_state_month",
+            sql: include_str!("../migrations/003_game_state_month.sql"),
             kind: MigrationKind::Up,
         },
         Migration {
             version: 4,
-            description: "add_map_selection_and_field_pins",
-            sql: include_str!("../migrations/004_map.sql"),
+            description: "create_vehicle_table",
+            sql: include_str!("../migrations/004_vehicle.sql"),
             kind: MigrationKind::Up,
         },
         Migration {
             version: 5,
-            description: "create_vehicle_table",
-            sql: include_str!("../migrations/005_vehicle.sql"),
+            description: "add_field_number",
+            sql: include_str!("../migrations/005_field_number.sql"),
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 6,
+            description: "add_map_selection_and_field_pins",
+            sql: include_str!("../migrations/006_map.sql"),
             kind: MigrationKind::Up,
         },
     ];

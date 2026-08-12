@@ -5,7 +5,7 @@ import Button from "./ui/Button";
 import { INPUT_CLASS } from "./ui/inputStyles";
 import { SEASONS, SEASON_LABELS } from "../lib/types";
 import type { RotationEntry, Season } from "../lib/types";
-import { getCropInfo } from "../lib/crops";
+import { getCropInfo, formatMonthRange } from "../lib/crops";
 
 interface Props {
   fieldName: string;
@@ -45,7 +45,7 @@ export default function RotationCell({
   const cropInfo = getCropInfo(draft.crop);
   const isReplantingType = cropInfo?.growthType === "annual" || cropInfo?.growthType === "forage";
   const offSeason = isReplantingType && !cropInfo?.sowSeasons.includes(season);
-  const sowSeasonLabel = cropInfo?.sowSeasons.map((s) => SEASON_LABELS[s]).join(" or ");
+  const sowMonthLabel = cropInfo ? formatMonthRange(cropInfo.sowMonths) : "";
 
   function patchDraft(patch: Partial<{ crop: string | null; notes: string }>) {
     setDrafts((prev) => ({ ...prev, [season]: { ...prev[season], ...patch } }));
@@ -119,9 +119,13 @@ export default function RotationCell({
 
           {cropInfo && (
             <div className="flex flex-col gap-1.5 text-sm">
+              <p className="font-mono text-[10px] text-text-faint">
+                SOW {formatMonthRange(cropInfo.sowMonths).toUpperCase()} · HARVEST{" "}
+                {formatMonthRange(cropInfo.harvestMonths).toUpperCase()}
+              </p>
               {offSeason && (
                 <p className="rounded-md border border-warn-border bg-warn-bg px-3 py-2 text-[12.5px] leading-snug text-text-muted">
-                  ⚠ {cropInfo.name} is normally sown in {sowSeasonLabel} — sowing in {SEASON_LABELS[season]} may
+                  ⚠ {cropInfo.name} is normally sown {sowMonthLabel} — sowing in {SEASON_LABELS[season]} may
                   reduce yield or fail to mature.
                   {cropInfo.confidence === "low" &&
                     " Season data for this crop is unconfirmed — treat as a rough guide."}

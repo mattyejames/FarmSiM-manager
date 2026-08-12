@@ -6,9 +6,10 @@ A desktop companion app for planning your farm in **Farming Simulator 25**. Defi
 
 - **Fields** — track each field's number, name, size, soil type, and notes.
 - **Rotation planner** — a grid of every field across years and seasons; click a year to assign crops season by season.
+- **Timeline** — see a year's rotation laid out against each crop's real FS25 sow/harvest months, so you can catch a crop planned for the wrong season.
 - **Map** — pin your fields on a map of your farm (pick from a few bundled FS25 maps, or drop in your own screenshot).
 - **Vehicles** — track your machinery and see which equipment categories your rotation still needs.
-- **Dashboard** — a quick overview of your fields, rotation warnings, and what's planned or due.
+- **Dashboard** — a quick overview of your fields, rotation warnings, and what's planned or due this month.
 
 Data is stored locally in a SQLite database on your machine — no account, no login, no internet connection required.
 

@@ -2,16 +2,17 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { listFields } from "../lib/queries/fields";
 import { listRotationEntries } from "../lib/queries/rotation";
-import { tasksForSeason, describeTask } from "../lib/tasks";
+import { listVehicles } from "../lib/queries/vehicles";
+import { tasksForMonth, describeTask } from "../lib/tasks";
 import { dominantCrop } from "../lib/rotationSummary";
 import { estimateYieldIndex } from "../lib/yieldIndex";
+import { ownedCategorySet, checkEquipment } from "../lib/equipment";
 import { useGameState } from "../lib/gameStateContext";
-import { shiftSeason } from "../lib/queries/gameState";
+import { shiftMonth, monthLabel } from "../lib/calendar";
 import PageHeader from "../components/ui/PageHeader";
 import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
-import { SEASON_LABELS } from "../lib/types";
-import type { Field, RotationEntry } from "../lib/types";
+import type { Field, RotationEntry, Vehicle } from "../lib/types";
 
 const CROP_COLORS = ["bg-warn-muted", "bg-[#B98452]", "bg-accent", "bg-info"];
 
@@ -19,18 +20,21 @@ export default function Dashboard() {
   const { gameState } = useGameState();
   const [fields, setFields] = useState<Field[]>([]);
   const [entries, setEntries] = useState<RotationEntry[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([listFields(), listRotationEntries()]).then(([f, e]) => {
+    Promise.all([listFields(), listRotationEntries(), listVehicles()]).then(([f, e, v]) => {
       setFields(f);
       setEntries(e);
+      setVehicles(v);
       setLoading(false);
     });
   }, []);
 
   const currentYear = gameState?.current_year ?? 1;
-  const currentSeason = gameState?.current_season ?? "SPRING";
+  const currentMonth = gameState?.current_month ?? 3;
+  const ownedCategories = ownedCategorySet(vehicles);
 
   const noPlanFields = useMemo(
     () => fields.filter((f) => !dominantCrop(entries.filter((e) => e.field_id === f.id && e.year === currentYear))),
@@ -82,9 +86,9 @@ export default function Dashboard() {
     return warnings;
   }, [fields, entries]);
 
-  const dueNow = tasksForSeason(fields, entries, currentYear, currentSeason);
-  const upcomingState = gameState ? shiftSeason(gameState, 1) : null;
-  const upcoming = upcomingState ? tasksForSeason(fields, entries, upcomingState.current_year, upcomingState.current_season) : [];
+  const dueNow = tasksForMonth(fields, entries, currentYear, currentMonth);
+  const upcomingState = gameState ? shiftMonth(gameState, 1) : null;
+  const upcoming = upcomingState ? tasksForMonth(fields, entries, upcomingState.current_year, upcomingState.current_month) : [];
 
   if (loading || !gameState) return <p className="p-6 text-text-dim">Loading…</p>;
 
@@ -216,6 +220,17 @@ export default function Dashboard() {
                 {repeatWarnings.length === 0 && noPlanFields.length === 0 && (
                   <p className="text-[12.5px] text-text-dimmer">Nothing needs attention right now.</p>
                 )}
+                {vehicles.length === 0 && (
+                  <div className="flex gap-2.5 rounded-md border border-border bg-surface-3 px-3 py-2.5">
+                    <span className="text-text-dimmer">◻</span>
+                    <p className="text-[12.5px] leading-snug text-text-muted">
+                      No vehicles in your inventory yet, so every task's equipment shows as missing.{" "}
+                      <Link to="/vehicles" className="text-text-dim underline underline-offset-2">
+                        Add what you own
+                      </Link>
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </Card>
@@ -236,6 +251,16 @@ export default function Dashboard() {
                 <span className="text-accent">→</span>
               </Link>
               <Link
+                to="/timeline"
+                className="flex items-center justify-between rounded-md border-l-2 border-accent bg-surface-3 px-3.5 py-2.5"
+              >
+                <div>
+                  <div className="text-[13px] font-semibold text-text">Year timeline</div>
+                  <div className="text-[11.5px] text-text-dimmer">Sow/harvest windows vs. plan</div>
+                </div>
+                <span className="text-accent">→</span>
+              </Link>
+              <Link
                 to="/fields"
                 className="flex items-center justify-between rounded-md border-l-2 border-accent bg-surface-3 px-3.5 py-2.5"
               >
@@ -249,23 +274,37 @@ export default function Dashboard() {
 
             <Card className="flex flex-1 flex-col gap-2.5 p-3.5">
               <span className="font-mono text-[10px] tracking-wide text-text-faint">
-                DUE THIS SEASON · {SEASON_LABELS[currentSeason].toUpperCase()}
+                DUE THIS MONTH · {monthLabel(currentMonth).toUpperCase()}
               </span>
               {dueNow.length === 0 ? (
-                <p className="text-[12.5px] text-text-dimmer">Nothing due this season.</p>
+                <p className="text-[12.5px] text-text-dimmer">Nothing due this month.</p>
               ) : (
-                dueNow.map((task, i) => (
-                  <div key={i} className="flex items-start gap-2.5">
-                    <span className="mt-1.5 h-[5px] w-[5px] flex-none rounded-full bg-accent" />
-                    <span className="text-[12.5px] leading-snug text-text-muted">{describeTask(task)}</span>
-                  </div>
-                ))
+                dueNow.map((task, i) => {
+                  const checklist = task.machines ? checkEquipment(task.machines, ownedCategories) : [];
+                  return (
+                    <div key={i} className="flex items-start gap-2.5">
+                      <span className="mt-1.5 h-[5px] w-[5px] flex-none rounded-full bg-accent" />
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[12.5px] leading-snug text-text-muted">{describeTask(task)}</span>
+                        {checklist.length > 0 && (
+                          <span className="flex flex-wrap gap-x-2.5 gap-y-0.5 font-mono text-[10px] text-text-faint">
+                            {checklist.map(({ machine, owned }) => (
+                              <span key={machine} className={owned ? "text-text-faint" : "text-warn-muted"}>
+                                {owned ? "✓" : "✗"} {machine}
+                              </span>
+                            ))}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
               )}
               {upcoming.length > 0 && upcomingState && (
                 <>
                   <div className="mt-1 h-px bg-border-faint" />
                   <span className="font-mono text-[10px] tracking-wide text-text-faint">
-                    COMING UP · {SEASON_LABELS[upcomingState.current_season].toUpperCase()}
+                    COMING UP · {monthLabel(upcomingState.current_month).toUpperCase()}
                   </span>
                   {upcoming.slice(0, 3).map((task, i) => (
                     <div key={i} className="flex items-start gap-2.5">

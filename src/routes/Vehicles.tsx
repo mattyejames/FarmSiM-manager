@@ -3,7 +3,6 @@ import { listFields } from "../lib/queries/fields";
 import { listRotationEntries } from "../lib/queries/rotation";
 import { listVehicles, createVehicle, updateVehicle, deleteVehicle } from "../lib/queries/vehicles";
 import { coverageForRotation, cropCountForCategory } from "../lib/equipment";
-import type { EquipmentCategory } from "../lib/equipment";
 import VehicleForm from "../components/VehicleForm";
 import PageHeader from "../components/ui/PageHeader";
 import Button from "../components/ui/Button";
@@ -104,7 +103,7 @@ export default function Vehicles() {
                 <div className="text-[12.5px] text-text-dim">{vehicle.category}</div>
                 <div className="truncate text-[12.5px] text-text-subtle">{vehicle.notes ?? "—"}</div>
                 <div className="text-right font-mono text-[11px] text-text-faint">
-                  {cropCountForCategory(vehicle.category as EquipmentCategory) || "—"} crops
+                  {cropCountForCategory(vehicle.category) || "—"} crops
                 </div>
               </button>
             ))}
