@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { listFields } from "../lib/queries/fields";
-import { DEFAULT_SAVE_ID } from "../lib/queries/saves";
+import { useSave } from "../lib/saveContext";
 import { useGameState } from "../lib/gameStateContext";
 import { monthLabel } from "../lib/calendar";
 
 const LINKS = [
-  { to: "/", label: "Dashboard", end: true, countKey: null },
+  { to: "", label: "Dashboard", end: true, countKey: null },
   { to: "/fields", label: "Fields", end: false, countKey: "fields" as const },
   { to: "/rotation", label: "Rotation", end: false, countKey: null },
   { to: "/timeline", label: "Timeline", end: false, countKey: null },
@@ -16,12 +16,13 @@ const LINKS = [
 
 export default function NavBar() {
   const location = useLocation();
+  const { saveId, basePath } = useSave();
   const { gameState, shift } = useGameState();
   const [fieldCount, setFieldCount] = useState<number | null>(null);
 
   useEffect(() => {
-    listFields(DEFAULT_SAVE_ID).then((f) => setFieldCount(f.length));
-  }, [location.pathname]);
+    listFields(saveId).then((f) => setFieldCount(f.length));
+  }, [saveId, location.pathname]);
 
   return (
     <div className="flex h-full w-[212px] flex-none flex-col border-r border-border-faint bg-surface-0 font-sans text-text">
@@ -61,7 +62,7 @@ export default function NavBar() {
         {LINKS.map((link) => (
           <NavLink
             key={link.to}
-            to={link.to}
+            to={`${basePath}${link.to}`}
             end={link.end}
             className={({ isActive }) =>
               `flex items-center gap-2.5 rounded-[5px] border-l-2 px-2.5 py-2 text-[13px] font-medium transition-colors ${

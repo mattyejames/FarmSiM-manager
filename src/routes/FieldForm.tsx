@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { createField, getField, updateField } from "../lib/queries/fields";
-import { DEFAULT_SAVE_ID } from "../lib/queries/saves";
+import { useSave } from "../lib/saveContext";
 import SoilTypeInput from "../components/SoilTypeInput";
 import PageHeader from "../components/ui/PageHeader";
 import Button from "../components/ui/Button";
@@ -13,6 +13,7 @@ export default function FieldForm() {
   const { fieldId } = useParams();
   const isEdit = Boolean(fieldId);
   const navigate = useNavigate();
+  const { saveId, basePath } = useSave();
 
   const [name, setName] = useState("");
   const [number, setNumber] = useState("");
@@ -71,10 +72,10 @@ export default function FieldForm() {
     try {
       if (isEdit && fieldId) {
         await updateField(fieldId, input);
-        navigate(`/fields/${fieldId}`);
+        navigate(`${basePath}/fields/${fieldId}`);
       } else {
-        const id = await createField(DEFAULT_SAVE_ID, input);
-        navigate(`/fields/${id}`);
+        const id = await createField(saveId, input);
+        navigate(`${basePath}/fields/${id}`);
       }
     } catch (err) {
       setError(String(err));

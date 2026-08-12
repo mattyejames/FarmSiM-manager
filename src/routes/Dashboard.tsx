@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { listFields } from "../lib/queries/fields";
 import { listRotationEntries } from "../lib/queries/rotation";
 import { listVehicles } from "../lib/queries/vehicles";
-import { DEFAULT_SAVE_ID } from "../lib/queries/saves";
+import { useSave } from "../lib/saveContext";
 import { tasksForMonth, describeTask } from "../lib/tasks";
 import { dominantCrop } from "../lib/rotationSummary";
 import { estimateYieldIndex } from "../lib/yieldIndex";
@@ -18,6 +18,7 @@ import type { Field, RotationEntry, Vehicle } from "../lib/types";
 const CROP_COLORS = ["bg-warn-muted", "bg-[#B98452]", "bg-accent", "bg-info"];
 
 export default function Dashboard() {
+  const { saveId, basePath } = useSave();
   const { gameState } = useGameState();
   const [fields, setFields] = useState<Field[]>([]);
   const [entries, setEntries] = useState<RotationEntry[]>([]);
@@ -25,17 +26,14 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([
-      listFields(DEFAULT_SAVE_ID),
-      listRotationEntries(DEFAULT_SAVE_ID),
-      listVehicles(DEFAULT_SAVE_ID),
-    ]).then(([f, e, v]) => {
+    setLoading(true);
+    Promise.all([listFields(saveId), listRotationEntries(saveId), listVehicles(saveId)]).then(([f, e, v]) => {
       setFields(f);
       setEntries(e);
       setVehicles(v);
       setLoading(false);
     });
-  }, []);
+  }, [saveId]);
 
   const currentYear = gameState?.current_year ?? 1;
   const currentMonth = gameState?.current_month ?? 3;
@@ -105,7 +103,7 @@ export default function Dashboard() {
           <div className="flex flex-col items-center gap-3 text-center">
             <p className="text-text-dim">
               Get started by{" "}
-              <Link to="/fields/new" className="text-accent underline">
+              <Link to={`${basePath}/fields/new`} className="text-accent underline">
                 adding your first field
               </Link>
               .
@@ -121,7 +119,7 @@ export default function Dashboard() {
       <PageHeader
         title="Dashboard"
         actions={
-          <Link to="/fields/new">
+          <Link to={`${basePath}/fields/new`}>
             <Button variant="primary">+ Add field</Button>
           </Link>
         }
@@ -141,7 +139,7 @@ export default function Dashboard() {
             <span className="font-mono text-[10px] tracking-wide text-warn-muted">NO ROTATION PLAN</span>
             <span className="text-[34px] font-semibold leading-none text-warn">{noPlanFields.length}</span>
             {noPlanFields.length > 0 && (
-              <Link to="/rotation" className="text-xs text-warn-muted underline underline-offset-2">
+              <Link to={`${basePath}/rotation`} className="text-xs text-warn-muted underline underline-offset-2">
                 Plan them →
               </Link>
             )}
@@ -200,11 +198,11 @@ export default function Dashboard() {
                   <div key={w.field.id} className="flex gap-2.5 rounded-md border border-warn-border bg-warn-bg px-3 py-2.5">
                     <span className="text-warn">⚠</span>
                     <p className="text-[12.5px] leading-snug text-text-muted">
-                      <Link to={`/fields/${w.field.id}`} className="font-semibold text-text">
+                      <Link to={`${basePath}/fields/${w.field.id}`} className="font-semibold text-text">
                         {w.field.name}
                       </Link>{" "}
                       — {w.crop} since Year {w.since}. Expect a yield hit.{" "}
-                      <Link to="/rotation" className="text-warn underline underline-offset-2">
+                      <Link to={`${basePath}/rotation`} className="text-warn underline underline-offset-2">
                         Open rotation
                       </Link>
                     </p>
@@ -216,7 +214,7 @@ export default function Dashboard() {
                     <p className="text-[12.5px] leading-snug text-text-muted">
                       <strong className="font-semibold text-text">{noPlanFields.length} fields</strong> have no crop
                       set for Year {currentYear}.{" "}
-                      <Link to="/rotation" className="text-text-dim underline underline-offset-2">
+                      <Link to={`${basePath}/rotation`} className="text-text-dim underline underline-offset-2">
                         Plan them
                       </Link>
                     </p>
@@ -230,7 +228,7 @@ export default function Dashboard() {
                     <span className="text-text-dimmer">◻</span>
                     <p className="text-[12.5px] leading-snug text-text-muted">
                       No vehicles in your inventory yet, so every task's equipment shows as missing.{" "}
-                      <Link to="/vehicles" className="text-text-dim underline underline-offset-2">
+                      <Link to={`${basePath}/vehicles`} className="text-text-dim underline underline-offset-2">
                         Add what you own
                       </Link>
                     </p>
@@ -244,7 +242,7 @@ export default function Dashboard() {
             <Card className="flex flex-col gap-2 p-3.5">
               <span className="font-mono text-[10px] tracking-wide text-text-faint">JUMP TO</span>
               <Link
-                to="/rotation"
+                to={`${basePath}/rotation`}
                 className="flex items-center justify-between rounded-md border-l-2 border-accent bg-surface-3 px-3.5 py-2.5"
               >
                 <div>
@@ -256,7 +254,7 @@ export default function Dashboard() {
                 <span className="text-accent">→</span>
               </Link>
               <Link
-                to="/timeline"
+                to={`${basePath}/timeline`}
                 className="flex items-center justify-between rounded-md border-l-2 border-accent bg-surface-3 px-3.5 py-2.5"
               >
                 <div>
@@ -266,7 +264,7 @@ export default function Dashboard() {
                 <span className="text-accent">→</span>
               </Link>
               <Link
-                to="/fields"
+                to={`${basePath}/fields`}
                 className="flex items-center justify-between rounded-md border-l-2 border-accent bg-surface-3 px-3.5 py-2.5"
               >
                 <div>

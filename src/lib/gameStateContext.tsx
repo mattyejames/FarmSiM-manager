@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { getGameState, setGameState } from "./queries/gameState";
-import { DEFAULT_SAVE_ID } from "./queries/saves";
+import { useSave } from "./saveContext";
 import { shiftMonth } from "./calendar";
 import type { GameState } from "./types";
 
@@ -16,11 +16,13 @@ const GameStateContext = createContext<GameStateContextValue | null>(null);
  * routed screens, so advancing the month from the sidebar is reflected everywhere without
  * each screen polling independently. */
 export function GameStateProvider({ children }: { children: ReactNode }) {
+  const { saveId } = useSave();
   const [gameState, setGameStateLocal] = useState<GameState | null>(null);
 
   useEffect(() => {
-    getGameState(DEFAULT_SAVE_ID).then(setGameStateLocal);
-  }, []);
+    setGameStateLocal(null);
+    getGameState(saveId).then(setGameStateLocal);
+  }, [saveId]);
 
   const shift = useCallback(
     async (direction: 1 | -1) => {

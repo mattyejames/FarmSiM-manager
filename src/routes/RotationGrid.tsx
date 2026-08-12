@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { listFields } from "../lib/queries/fields";
 import { listRotationEntries, upsertRotationEntry } from "../lib/queries/rotation";
-import { DEFAULT_SAVE_ID } from "../lib/queries/saves";
+import { useSave } from "../lib/saveContext";
 import RotationCell from "../components/RotationCell";
 import PageHeader from "../components/ui/PageHeader";
 import Button from "../components/ui/Button";
@@ -18,6 +18,7 @@ function entryKey(fieldId: string, year: number, season: Season) {
 }
 
 export default function RotationGrid() {
+  const { saveId, basePath } = useSave();
   const { gameState } = useGameState();
   const [fields, setFields] = useState<Field[]>([]);
   const [entries, setEntries] = useState<RotationEntry[]>([]);
@@ -26,7 +27,7 @@ export default function RotationGrid() {
   const [selected, setSelected] = useState<{ field: Field; year: number } | null>(null);
 
   async function refresh() {
-    const [f, e] = await Promise.all([listFields(DEFAULT_SAVE_ID), listRotationEntries(DEFAULT_SAVE_ID)]);
+    const [f, e] = await Promise.all([listFields(saveId), listRotationEntries(saveId)]);
     setFields(f);
     setEntries(e);
     const highestPlannedYear = e.reduce((max, entry) => Math.max(max, entry.year), 1);
@@ -35,8 +36,9 @@ export default function RotationGrid() {
   }
 
   useEffect(() => {
+    setLoading(true);
     refresh();
-  }, []);
+  }, [saveId]);
 
   const entryMap = useMemo(() => {
     const map = new Map<string, RotationEntry>();
@@ -78,7 +80,7 @@ export default function RotationGrid() {
       <div className="p-6">
         <p className="text-text-dim">
           No fields yet.{" "}
-          <Link to="/fields/new" className="text-accent underline">
+          <Link to={`${basePath}/fields/new`} className="text-accent underline">
             Add a field
           </Link>{" "}
           before planning a rotation.
