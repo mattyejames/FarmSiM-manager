@@ -1,4 +1,5 @@
 import { SOIL_SUGGESTIONS } from "../lib/soilSuggestions";
+import { INPUT_CLASS } from "./ui/inputStyles";
 
 interface Props {
   value: string;
@@ -14,7 +15,7 @@ export default function SoilTypeInput({ value, onChange }: Props) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="e.g. Loam"
-        className="w-full rounded-md border border-stone-300 px-3 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-500 dark:border-stone-700 dark:bg-stone-800"
+        className={INPUT_CLASS}
       />
       <datalist id="soil-type-suggestions">
         {SOIL_SUGGESTIONS.map((soil) => (

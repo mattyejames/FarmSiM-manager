@@ -7,11 +7,18 @@ export async function listVehicles(): Promise<Vehicle[]> {
   return db.select<Vehicle[]>("SELECT * FROM vehicle ORDER BY name COLLATE NOCASE");
 }
 
+export async function getVehicle(id: string): Promise<Vehicle | null> {
+  const db = await getDb();
+  const rows = await db.select<Vehicle[]>("SELECT * FROM vehicle WHERE id = $1", [id]);
+  return rows[0] ?? null;
+}
+
 export async function createVehicle(input: VehicleInput): Promise<string> {
   const db = await getDb();
   const id = uuidv4();
   await db.execute(
-    `INSERT INTO vehicle (id, name, category, notes) VALUES ($1, $2, $3, $4)`,
+    `INSERT INTO vehicle (id, name, category, notes)
+     VALUES ($1, $2, $3, $4)`,
     [id, input.name, input.category, input.notes],
   );
   return id;
@@ -20,7 +27,9 @@ export async function createVehicle(input: VehicleInput): Promise<string> {
 export async function updateVehicle(id: string, input: VehicleInput): Promise<void> {
   const db = await getDb();
   await db.execute(
-    `UPDATE vehicle SET name = $1, category = $2, notes = $3, updated_at = datetime('now') WHERE id = $4`,
+    `UPDATE vehicle
+     SET name = $1, category = $2, notes = $3, updated_at = datetime('now')
+     WHERE id = $4`,
     [input.name, input.category, input.notes, id],
   );
 }

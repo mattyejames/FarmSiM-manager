@@ -14,16 +14,22 @@ export const SEASON_LABELS: Record<Season, string> = {
 export interface Field {
   id: string;
   name: string;
+  /** The in-game field number, e.g. from the player's own map. User-entered, optional. */
+  number: number | null;
   size_value: number;
   size_unit: SizeUnit;
   soil_type: string | null;
   notes: string | null;
+  /** Pin position on the active map image, as a percentage (0-100) of its width/height. */
+  map_x: number | null;
+  map_y: number | null;
   created_at: string;
   updated_at: string;
 }
 
 export interface FieldInput {
   name: string;
+  number: number | null;
   size_value: number;
   size_unit: SizeUnit;
   soil_type: string | null;
@@ -73,4 +79,22 @@ export interface VehicleInput {
 export interface GameState {
   current_year: number;
   current_month: number;
+}
+
+/** Keys for the map images bundled with the app; 'custom' means map_selection.custom_image
+ * (a user-dropped data: URL) is the active image instead of a bundled one. */
+export type MapKey = "riverbend-springs" | "kinlaig" | "hutan-pantai" | "zielonka" | "custom";
+
+export const BUNDLED_MAP_LABELS: Record<Exclude<MapKey, "custom">, string> = {
+  "riverbend-springs": "Riverbend Springs",
+  kinlaig: "Kinlaig",
+  "hutan-pantai": "Hutan Pantai",
+  zielonka: "Zielonka",
+};
+
+/** Which map image is currently active — single-farm scope, so one active map is enough. */
+export interface MapSelection {
+  map_key: MapKey;
+  /** A user-dropped image as a data: URL; only meaningful when map_key === 'custom'. */
+  custom_image: string | null;
 }

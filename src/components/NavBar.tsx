@@ -1,40 +1,98 @@
-import { NavLink } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { NavLink, useLocation } from "react-router-dom";
+import { listFields } from "../lib/queries/fields";
+import { useGameState } from "../lib/gameStateContext";
+import { monthLabel } from "../lib/calendar";
 
-const links = [
-  { to: "/", label: "Dashboard", end: true },
-  { to: "/fields", label: "Fields" },
-  { to: "/rotation", label: "Rotation" },
-  { to: "/timeline", label: "Timeline" },
-  { to: "/vehicles", label: "Vehicles" },
+const LINKS = [
+  { to: "/", label: "Dashboard", end: true, countKey: null },
+  { to: "/fields", label: "Fields", end: false, countKey: "fields" as const },
+  { to: "/rotation", label: "Rotation", end: false, countKey: null },
+  { to: "/timeline", label: "Timeline", end: false, countKey: null },
+  { to: "/vehicles", label: "Vehicles", end: false, countKey: null },
+  { to: "/map", label: "Map", end: false, countKey: null },
 ];
 
-const linkClass = (isActive: boolean) =>
-  `rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500 ${
-    isActive
-      ? "bg-emerald-600 text-white"
-      : "text-stone-600 hover:bg-stone-200 dark:text-stone-300 dark:hover:bg-stone-800"
-  }`;
-
 export default function NavBar() {
+  const location = useLocation();
+  const { gameState, shift } = useGameState();
+  const [fieldCount, setFieldCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    listFields().then((f) => setFieldCount(f.length));
+  }, [location.pathname]);
+
   return (
-    <header className="border-b border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-950">
-      <div className="mx-auto flex max-w-5xl items-center gap-2 px-4 py-3">
-        <span className="mr-4 text-lg font-semibold text-stone-900 dark:text-stone-100">
-          🌾 FarmSiM Manager
-        </span>
-        <nav className="flex gap-2">
-          {links.map((link) => (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              end={link.end}
-              className={({ isActive }) => linkClass(isActive)}
+    <div className="flex h-full w-[212px] flex-none flex-col border-r border-border-faint bg-surface-0 font-sans text-text">
+      <div className="flex flex-col gap-2.5 border-b border-border-faint px-4 pb-4 pt-[18px]">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-[22px] w-[22px] items-center justify-center rounded bg-accent">
+            <div className="h-2 w-2 rotate-45 rounded-[1px] bg-surface-0" />
+          </div>
+          <div className="text-[14.5px] font-semibold tracking-tight text-text">FarmSiM Manager</div>
+        </div>
+        <div className="flex items-center justify-between rounded-[5px] border border-border bg-surface-4 px-2.5 py-1.5">
+          <span className="font-mono text-[10.5px] tracking-wide text-text-faint">
+            {gameState ? `YEAR ${gameState.current_year} · ${monthLabel(gameState.current_month).toUpperCase()}` : "…"}
+          </span>
+          <div className="flex gap-0.5">
+            <button
+              type="button"
+              onClick={() => shift(-1)}
+              aria-label="Previous month"
+              className="flex h-4 w-4 items-center justify-center rounded-[3px] bg-surface-hover text-[10px] text-text-dimmer hover:text-text"
             >
-              {link.label}
-            </NavLink>
-          ))}
-        </nav>
+              ‹
+            </button>
+            <button
+              type="button"
+              onClick={() => shift(1)}
+              aria-label="Next month"
+              className="flex h-4 w-4 items-center justify-center rounded-[3px] bg-surface-hover text-[10px] text-text-dimmer hover:text-text"
+            >
+              ›
+            </button>
+          </div>
+        </div>
       </div>
-    </header>
+
+      <nav className="flex flex-col gap-0.5 px-2.5 py-3">
+        {LINKS.map((link) => (
+          <NavLink
+            key={link.to}
+            to={link.to}
+            end={link.end}
+            className={({ isActive }) =>
+              `flex items-center gap-2.5 rounded-[5px] border-l-2 px-2.5 py-2 text-[13px] font-medium transition-colors ${
+                isActive
+                  ? "border-accent bg-surface-3 text-text"
+                  : "border-transparent text-text-dimmer hover:bg-surface-hover hover:text-text-muted"
+              }`
+            }
+          >
+            {({ isActive }) => (
+              <>
+                {link.label}
+                {link.countKey === "fields" && fieldCount !== null && (
+                  <span
+                    className={`ml-auto font-mono text-[10px] ${isActive ? "text-text-faint" : "text-text-ghost"}`}
+                  >
+                    {fieldCount}
+                  </span>
+                )}
+              </>
+            )}
+          </NavLink>
+        ))}
+      </nav>
+
+      <div className="mt-auto flex flex-col gap-1.5 border-t border-border-faint px-4 py-3.5">
+        <div className="flex items-center gap-1.5">
+          <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+          <span className="text-[11.5px] text-text-dimmer">Saved locally</span>
+        </div>
+        <div className="font-mono text-[10px] tracking-wide text-text-ghost">farmsim.db</div>
+      </div>
+    </div>
   );
 }
