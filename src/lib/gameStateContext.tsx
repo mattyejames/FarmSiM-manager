@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { getGameState, setGameState } from "./queries/gameState";
+import { DEFAULT_SAVE_ID } from "./queries/saves";
 import { shiftMonth } from "./calendar";
 import type { GameState } from "./types";
 
@@ -18,13 +19,13 @@ export function GameStateProvider({ children }: { children: ReactNode }) {
   const [gameState, setGameStateLocal] = useState<GameState | null>(null);
 
   useEffect(() => {
-    getGameState().then(setGameStateLocal);
+    getGameState(DEFAULT_SAVE_ID).then(setGameStateLocal);
   }, []);
 
   const shift = useCallback(
     async (direction: 1 | -1) => {
       if (!gameState) return;
-      const next = shiftMonth(gameState, direction);
+      const next = { ...gameState, ...shiftMonth(gameState, direction) };
       setGameStateLocal(next);
       await setGameState(next);
     },

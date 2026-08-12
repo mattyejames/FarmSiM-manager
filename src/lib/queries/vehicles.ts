@@ -2,9 +2,9 @@ import { v4 as uuidv4 } from "uuid";
 import { getDb } from "../db";
 import type { Vehicle, VehicleInput } from "../types";
 
-export async function listVehicles(): Promise<Vehicle[]> {
+export async function listVehicles(saveId: string): Promise<Vehicle[]> {
   const db = await getDb();
-  return db.select<Vehicle[]>("SELECT * FROM vehicle ORDER BY name COLLATE NOCASE");
+  return db.select<Vehicle[]>("SELECT * FROM vehicle WHERE save_id = $1 ORDER BY name COLLATE NOCASE", [saveId]);
 }
 
 export async function getVehicle(id: string): Promise<Vehicle | null> {
@@ -13,13 +13,13 @@ export async function getVehicle(id: string): Promise<Vehicle | null> {
   return rows[0] ?? null;
 }
 
-export async function createVehicle(input: VehicleInput): Promise<string> {
+export async function createVehicle(saveId: string, input: VehicleInput): Promise<string> {
   const db = await getDb();
   const id = uuidv4();
   await db.execute(
-    `INSERT INTO vehicle (id, name, category, notes)
-     VALUES ($1, $2, $3, $4)`,
-    [id, input.name, input.category, input.notes],
+    `INSERT INTO vehicle (id, save_id, name, category, notes)
+     VALUES ($1, $2, $3, $4, $5)`,
+    [id, saveId, input.name, input.category, input.notes],
   );
   return id;
 }

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { listFields } from "../lib/queries/fields";
 import { listRotationEntries } from "../lib/queries/rotation";
+import { DEFAULT_SAVE_ID } from "../lib/queries/saves";
 import { useGameState } from "../lib/gameStateContext";
 import { MONTH_LABELS, seasonForMonth } from "../lib/calendar";
 import { getCropInfo } from "../lib/crops";
@@ -33,7 +34,7 @@ export default function Timeline() {
   const [year, setYear] = useState<number | null>(null);
 
   useEffect(() => {
-    Promise.all([listFields(), listRotationEntries()]).then(([f, e]) => {
+    Promise.all([listFields(DEFAULT_SAVE_ID), listRotationEntries(DEFAULT_SAVE_ID)]).then(([f, e]) => {
       setFields(f);
       setEntries(e);
       setLoading(false);
