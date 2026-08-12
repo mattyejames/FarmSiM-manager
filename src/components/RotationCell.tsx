@@ -142,6 +142,27 @@ export default function RotationCell({
                 </p>
               )}
               {cropInfo.note && <p className="text-[12.5px] text-text-faint">{cropInfo.note}</p>}
+
+              {cropInfo.operations.length > 0 && (
+                <div className="flex flex-col gap-1">
+                  <p className="font-mono text-[9.5px] tracking-wide text-text-faint">FIELD OPERATIONS</p>
+                  <ol className="flex flex-col gap-1">
+                    {cropInfo.operations.map((op, i) => (
+                      <li key={i} className="flex items-baseline justify-between gap-2 text-[12px] text-text-muted">
+                        <span>
+                          <span className="text-text-faint">{i + 1}.</span> {op.step}
+                          {op.optional && <span className="ml-1 text-[10px] text-text-faint">(optional)</span>}
+                        </span>
+                        {op.machine && (
+                          <span className="shrink-0 text-right font-mono text-[10.5px] text-text-dimmer">
+                            {op.machine}
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
             </div>
           )}
 

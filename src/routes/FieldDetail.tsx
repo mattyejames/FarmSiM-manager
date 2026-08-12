@@ -9,6 +9,7 @@ import { estimateYieldIndex } from "../lib/yieldIndex";
 import PageHeader from "../components/ui/PageHeader";
 import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
+import FieldOperationsReference from "../components/FieldOperationsReference";
 import { SEASONS, SEASON_LABELS } from "../lib/types";
 import type { Field, RotationEntry } from "../lib/types";
 import { NO_CROP_LABEL } from "../lib/crops";
@@ -200,6 +201,8 @@ export default function FieldDetail() {
                 )}
               </div>
             </Card>
+
+            <FieldOperationsReference />
           </div>
         </div>
       </div>
