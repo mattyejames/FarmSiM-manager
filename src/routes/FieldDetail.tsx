@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { deleteField, getField } from "../lib/queries/fields";
 import { listRotationEntriesForField } from "../lib/queries/rotation";
 import { getMapSelection } from "../lib/queries/map";
+import { useSave } from "../lib/saveContext";
 import { activeMapImage } from "../lib/maps";
 import { dominantCrop } from "../lib/rotationSummary";
 import { estimateYieldIndex } from "../lib/yieldIndex";
@@ -17,6 +18,7 @@ import { NO_CROP_LABEL } from "../lib/crops";
 export default function FieldDetail() {
   const { fieldId } = useParams();
   const navigate = useNavigate();
+  const { basePath } = useSave();
   const [field, setField] = useState<Field | null>(null);
   const [entries, setEntries] = useState<RotationEntry[]>([]);
   const [mapImage, setMapImage] = useState<string | null>(null);
@@ -60,7 +62,7 @@ export default function FieldDetail() {
     if (!fieldId) return;
     if (!confirm("Delete this field and its rotation plan? This cannot be undone.")) return;
     await deleteField(fieldId);
-    navigate("/fields");
+    navigate(`${basePath}/fields`);
   }
 
   if (loading) return <p className="p-6 text-text-dim">Loading…</p>;
@@ -72,7 +74,7 @@ export default function FieldDetail() {
         title={field.name}
         actions={
           <>
-            <Link to={`/fields/${field.id}/edit`}>
+            <Link to={`${basePath}/fields/${field.id}/edit`}>
               <Button type="button" variant="secondary">
                 Edit
               </Button>
@@ -100,7 +102,7 @@ export default function FieldDetail() {
               }
             >
               {(!mapImage || field.map_x === null) && (
-                <Link to="/map" className="font-mono text-[10px] tracking-wide underline">
+                <Link to={`${basePath}/map`} className="font-mono text-[10px] tracking-wide underline">
                   no map pin set — place one
                 </Link>
               )}
@@ -164,7 +166,7 @@ export default function FieldDetail() {
                 {entries.length === 0 ? (
                   <p className="text-[12.5px] text-text-dim">
                     No rotation entries yet.{" "}
-                    <Link to="/rotation" className="text-accent underline">
+                    <Link to={`${basePath}/rotation`} className="text-accent underline">
                       Plan this field's rotation
                     </Link>
                     .

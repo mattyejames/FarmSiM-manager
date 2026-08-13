@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { listFields, updateFieldPin } from "../lib/queries/fields";
 import { listRotationEntries } from "../lib/queries/rotation";
 import { getMapSelection, setMapSelection } from "../lib/queries/map";
-import { DEFAULT_SAVE_ID } from "../lib/queries/saves";
+import { useSave } from "../lib/saveContext";
 import { activeMapImage, mapLabel, BUNDLED_MAP_KEYS, BUNDLED_MAP_LABELS } from "../lib/maps";
 import { dominantCrop } from "../lib/rotationSummary";
 import { useGameState } from "../lib/gameStateContext";
@@ -13,6 +13,7 @@ import type { Field, MapKey, MapSelection, RotationEntry } from "../lib/types";
 import { NO_CROP_LABEL } from "../lib/crops";
 
 export default function MapScreen() {
+  const { saveId, basePath } = useSave();
   const { gameState } = useGameState();
   const [fields, setFields] = useState<Field[]>([]);
   const [entries, setEntries] = useState<RotationEntry[]>([]);
@@ -25,11 +26,7 @@ export default function MapScreen() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function refresh() {
-    const [f, e, sel] = await Promise.all([
-      listFields(DEFAULT_SAVE_ID),
-      listRotationEntries(DEFAULT_SAVE_ID),
-      getMapSelection(),
-    ]);
+    const [f, e, sel] = await Promise.all([listFields(saveId), listRotationEntries(saveId), getMapSelection()]);
     setFields(f);
     setEntries(e);
     setSelection(sel);
@@ -37,8 +34,9 @@ export default function MapScreen() {
   }
 
   useEffect(() => {
+    setLoading(true);
     refresh();
-  }, []);
+  }, [saveId]);
 
   const currentYear = gameState?.current_year ?? 1;
 
@@ -278,13 +276,13 @@ export default function MapScreen() {
                 )}
                 <div className="mt-2 flex gap-2">
                   <Link
-                    to="/rotation"
+                    to={`${basePath}/rotation`}
                     className="flex-1 rounded-md bg-accent py-2 text-center text-[12.5px] font-semibold text-accent-ink"
                   >
                     Edit rotation
                   </Link>
                   <Link
-                    to={`/fields/${selectedField.id}`}
+                    to={`${basePath}/fields/${selectedField.id}`}
                     className="rounded-md border border-border px-3.5 py-2 text-[12.5px] text-text-dim"
                   >
                     Field info

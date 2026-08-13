@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { listFields } from "../lib/queries/fields";
 import { listRotationEntries } from "../lib/queries/rotation";
 import { getMapSelection } from "../lib/queries/map";
-import { DEFAULT_SAVE_ID } from "../lib/queries/saves";
+import { useSave } from "../lib/saveContext";
 import { activeMapImage } from "../lib/maps";
 import { dominantCrop } from "../lib/rotationSummary";
 import { estimateYieldIndex } from "../lib/yieldIndex";
@@ -17,6 +17,7 @@ import { NO_CROP_LABEL } from "../lib/crops";
 type Filter = "all" | "no-plan" | { soil: string };
 
 export default function FieldsList() {
+  const { saveId, basePath } = useSave();
   const { gameState } = useGameState();
   const [fields, setFields] = useState<Field[]>([]);
   const [entries, setEntries] = useState<RotationEntry[]>([]);
@@ -26,17 +27,14 @@ export default function FieldsList() {
   const [filter, setFilter] = useState<Filter>("all");
 
   useEffect(() => {
-    Promise.all([
-      listFields(DEFAULT_SAVE_ID),
-      listRotationEntries(DEFAULT_SAVE_ID),
-      getMapSelection(),
-    ]).then(([f, e, sel]) => {
+    setLoading(true);
+    Promise.all([listFields(saveId), listRotationEntries(saveId), getMapSelection()]).then(([f, e, sel]) => {
       setFields(f);
       setEntries(e);
       setMapImage(activeMapImage(sel));
       setLoading(false);
     });
-  }, []);
+  }, [saveId]);
 
   const currentYear = gameState?.current_year ?? 1;
 
@@ -86,7 +84,7 @@ export default function FieldsList() {
               Add your first field and FarmSiM Manager starts a rotation plan for it — eight years, four seasons
               each, all yours to fill in. Everything stays on this machine.
             </p>
-            <Link to="/fields/new">
+            <Link to={`${basePath}/fields/new`}>
               <Button variant="primary">+ Add your first field</Button>
             </Link>
             <p className="mt-1 font-mono text-[9.5px] tracking-wide text-text-ghost">
@@ -111,7 +109,7 @@ export default function FieldsList() {
               placeholder="Search name or number…"
               className="w-[210px] rounded-md border border-border bg-surface-4 px-2.5 py-1.5 text-[12.5px] text-text placeholder:text-text-subtle focus-visible:border-accent focus-visible:outline-none"
             />
-            <Link to="/fields/new">
+            <Link to={`${basePath}/fields/new`}>
               <Button variant="primary">+ Add field</Button>
             </Link>
           </>
@@ -172,7 +170,7 @@ export default function FieldsList() {
             return (
               <Link
                 key={field.id}
-                to={`/fields/${field.id}`}
+                to={`${basePath}/fields/${field.id}`}
                 className={`grid grid-cols-[52px_1.4fr_0.6fr_0.75fr_1.7fr_0.9fr_0.7fr] items-center gap-3.5 px-3.5 py-2.5 hover:bg-surface-hover ${
                   i !== visibleFields.length - 1 ? "border-b border-border-faint" : ""
                 }`}

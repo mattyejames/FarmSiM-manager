@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { listFields } from "../lib/queries/fields";
 import { listRotationEntries } from "../lib/queries/rotation";
-import { DEFAULT_SAVE_ID } from "../lib/queries/saves";
+import { useSave } from "../lib/saveContext";
 import { useGameState } from "../lib/gameStateContext";
 import { MONTH_LABELS, seasonForMonth } from "../lib/calendar";
 import { getCropInfo } from "../lib/crops";
@@ -27,6 +27,7 @@ function cellClass(month: number, row: TimelineRow): string {
 }
 
 export default function Timeline() {
+  const { saveId, basePath } = useSave();
   const { gameState } = useGameState();
   const [fields, setFields] = useState<Field[]>([]);
   const [entries, setEntries] = useState<RotationEntry[]>([]);
@@ -34,12 +35,13 @@ export default function Timeline() {
   const [year, setYear] = useState<number | null>(null);
 
   useEffect(() => {
-    Promise.all([listFields(DEFAULT_SAVE_ID), listRotationEntries(DEFAULT_SAVE_ID)]).then(([f, e]) => {
+    setLoading(true);
+    Promise.all([listFields(saveId), listRotationEntries(saveId)]).then(([f, e]) => {
       setFields(f);
       setEntries(e);
       setLoading(false);
     });
-  }, []);
+  }, [saveId]);
 
   useEffect(() => {
     if (year !== null || !gameState) return;
@@ -83,7 +85,7 @@ export default function Timeline() {
         <div className="flex flex-1 items-center justify-center">
           <p className="text-text-dim">
             No fields yet.{" "}
-            <Link to="/fields/new" className="text-accent underline">
+            <Link to={`${basePath}/fields/new`} className="text-accent underline">
               Add a field
             </Link>{" "}
             before planning a rotation.
@@ -123,7 +125,7 @@ export default function Timeline() {
         {rows.length === 0 ? (
           <p className="text-[12.5px] text-text-dim">
             Nothing planned for Year {year} yet.{" "}
-            <Link to="/rotation" className="text-accent underline">
+            <Link to={`${basePath}/rotation`} className="text-accent underline">
               Open the rotation planner →
             </Link>
           </p>

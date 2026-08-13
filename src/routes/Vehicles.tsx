@@ -3,7 +3,7 @@ import { listFields } from "../lib/queries/fields";
 import { listRotationEntries } from "../lib/queries/rotation";
 import { listVehicles, createVehicle, updateVehicle, deleteVehicle } from "../lib/queries/vehicles";
 import { coverageForRotation, cropCountForCategory } from "../lib/equipment";
-import { DEFAULT_SAVE_ID } from "../lib/queries/saves";
+import { useSave } from "../lib/saveContext";
 import VehicleForm from "../components/VehicleForm";
 import PageHeader from "../components/ui/PageHeader";
 import Button from "../components/ui/Button";
@@ -11,6 +11,7 @@ import Card from "../components/ui/Card";
 import type { Field, RotationEntry, Vehicle } from "../lib/types";
 
 export default function Vehicles() {
+  const { saveId } = useSave();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [fields, setFields] = useState<Field[]>([]);
   const [entries, setEntries] = useState<RotationEntry[]>([]);
@@ -19,11 +20,7 @@ export default function Vehicles() {
   const [editing, setEditing] = useState<Vehicle | null | undefined>(undefined);
 
   async function refresh() {
-    const [v, f, e] = await Promise.all([
-      listVehicles(DEFAULT_SAVE_ID),
-      listFields(DEFAULT_SAVE_ID),
-      listRotationEntries(DEFAULT_SAVE_ID),
-    ]);
+    const [v, f, e] = await Promise.all([listVehicles(saveId), listFields(saveId), listRotationEntries(saveId)]);
     setVehicles(v);
     setFields(f);
     setEntries(e);
@@ -31,8 +28,9 @@ export default function Vehicles() {
   }
 
   useEffect(() => {
+    setLoading(true);
     refresh();
-  }, []);
+  }, [saveId]);
 
   const coverage = useMemo(() => coverageForRotation(vehicles, fields, entries), [vehicles, fields, entries]);
 
@@ -46,7 +44,7 @@ export default function Vehicles() {
     if (editing) {
       await updateVehicle(editing.id, input);
     } else {
-      await createVehicle(DEFAULT_SAVE_ID, input);
+      await createVehicle(saveId, input);
     }
     setEditing(undefined);
     await refresh();
