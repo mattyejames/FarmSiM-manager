@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { useParams } from "react-router-dom";
 import { getSave } from "./queries/saves";
@@ -13,6 +13,10 @@ interface SaveContextValue {
   /** `/s/${saveId}` — prefix every in-app Link/navigate path with this so navigation stays
    * inside the active save instead of jumping to an unscoped (and non-existent) route. */
   basePath: string;
+  /** Re-fetches the Save row in place (name/map/DLC changed) without a route change, so
+   * Settings and anything reading `save` — the NavBar header included — pick up an edit
+   * immediately instead of waiting for the next navigation to remount SaveProvider. */
+  refreshSave: () => Promise<void>;
 }
 
 const SaveContext = createContext<SaveContextValue | null>(null);
@@ -24,16 +28,22 @@ export function SaveProvider({ children }: { children: ReactNode }) {
   const { saveId } = useParams<{ saveId: string }>();
   const [save, setSave] = useState<Save | null>(null);
 
-  useEffect(() => {
+  const refreshSave = useCallback(async () => {
     if (!saveId) return;
-    setSave(null);
-    getSave(saveId).then(setSave);
+    setSave(await getSave(saveId));
   }, [saveId]);
+
+  useEffect(() => {
+    setSave(null);
+    refreshSave();
+  }, [saveId, refreshSave]);
 
   if (!saveId) throw new Error("SaveProvider must be rendered under a route with a :saveId param");
 
   return (
-    <SaveContext.Provider value={{ saveId, save, basePath: `/s/${saveId}` }}>{children}</SaveContext.Provider>
+    <SaveContext.Provider value={{ saveId, save, basePath: `/s/${saveId}`, refreshSave }}>
+      {children}
+    </SaveContext.Provider>
   );
 }
 

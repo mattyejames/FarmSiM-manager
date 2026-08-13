@@ -95,15 +95,6 @@ export const BUNDLED_MAP_LABELS: Record<Exclude<MapKey, "custom">, string> = {
   zielonka: "Zielonka",
 };
 
-/** Which map image is currently active — single-farm scope, so one active map is enough.
- * Superseded by Save's own map_key/custom_image once the save picker/wizard lands; kept
- * (and still backing the map_selection table) until that UI cutover happens. */
-export interface MapSelection {
-  map_key: MapKey;
-  /** A user-dropped image as a data: URL; only meaningful when map_key === 'custom'. */
-  custom_image: string | null;
-}
-
 /** A named container for one farm/savegame — every field, vehicle and game_state row is
  * scoped to exactly one save via save_id. Locked to one map for its lifetime; changing that
  * map (see changeSaveMap) clears the save's fields/rotations/vehicles/pins rather than

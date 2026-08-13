@@ -45,6 +45,12 @@ pub fn run() {
             sql: include_str!("../migrations/007_save.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 8,
+            description: "drop_map_selection",
+            sql: include_str!("../migrations/008_drop_map_selection.sql"),
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()

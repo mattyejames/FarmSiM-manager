@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { listFields } from "../lib/queries/fields";
 import { listRotationEntries } from "../lib/queries/rotation";
-import { getMapSelection } from "../lib/queries/map";
 import { useSave } from "../lib/saveContext";
 import { activeMapImage } from "../lib/maps";
 import { dominantCrop } from "../lib/rotationSummary";
@@ -17,24 +16,24 @@ import { NO_CROP_LABEL } from "../lib/crops";
 type Filter = "all" | "no-plan" | { soil: string };
 
 export default function FieldsList() {
-  const { saveId, basePath } = useSave();
+  const { saveId, basePath, save } = useSave();
   const { gameState } = useGameState();
   const [fields, setFields] = useState<Field[]>([]);
   const [entries, setEntries] = useState<RotationEntry[]>([]);
-  const [mapImage, setMapImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([listFields(saveId), listRotationEntries(saveId), getMapSelection()]).then(([f, e, sel]) => {
+    Promise.all([listFields(saveId), listRotationEntries(saveId)]).then(([f, e]) => {
       setFields(f);
       setEntries(e);
-      setMapImage(activeMapImage(sel));
       setLoading(false);
     });
   }, [saveId]);
+
+  const mapImage = save ? activeMapImage(save) : null;
 
   const currentYear = gameState?.current_year ?? 1;
 

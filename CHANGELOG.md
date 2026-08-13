@@ -3,6 +3,27 @@
 All notable changes to FarmSiM Manager are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- **Multiple saves** — FarmSiM Manager now supports more than one farm/savegame at once,
+  each locked to exactly one map for its lifetime. The app opens to a new home screen listing
+  every save (map thumbnail, field/vehicle counts); "+ New save" walks through a 3-step wizard
+  (name & DLC, map, review) before creating one. Every existing screen — Dashboard, Fields,
+  Rotation, Timeline, Vehicles, Map — is now scoped to whichever save you're in
+  (`/s/:saveId/...`), with a "‹ All saves" link back to the picker.
+- **Settings tab** — per-save name, map, and DLC list, editable after creation via the same
+  map picker the wizard uses. Changing a save's map clears its fields, rotation entries,
+  vehicles, and pins (none of that data is meaningful against a different map's real field
+  geography) behind an itemized warning dialog; deleting a save requires typing its name to
+  confirm.
+
+### Changed
+
+- `map_selection` (the old single global map setting) is retired — map choice is now a
+  property of each save (`save.map_key`/`custom_image`/`custom_map_name`).
+
 ## [1.1.0] - 2026-08-12
 
 ### Added
