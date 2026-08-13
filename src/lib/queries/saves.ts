@@ -3,12 +3,6 @@ import { getDb } from "../db";
 import { createGameState } from "./gameState";
 import type { MapKey, Save, SaveInput } from "../types";
 
-/** The one save that exists until the save picker/wizard (Phase 3) can create more —
- * migration 007 backfills every pre-existing row onto this id. Callers that don't yet have
- * a real active-save context (most of the app, for now) pass this explicitly; it goes away
- * once SaveProvider/saveContext.tsx lands. */
-export const DEFAULT_SAVE_ID = "00000000-0000-0000-0000-000000000000";
-
 interface SaveRow {
   id: string;
   name: string;

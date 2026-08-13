@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { listFields } from "../lib/queries/fields";
 import { useSave } from "../lib/saveContext";
 import { useGameState } from "../lib/gameStateContext";
@@ -16,7 +16,7 @@ const LINKS = [
 
 export default function NavBar() {
   const location = useLocation();
-  const { saveId, basePath } = useSave();
+  const { saveId, save, basePath } = useSave();
   const { gameState, shift } = useGameState();
   const [fieldCount, setFieldCount] = useState<number | null>(null);
 
@@ -28,11 +28,19 @@ export default function NavBar() {
     <div className="flex h-full w-[212px] flex-none flex-col border-r border-border-faint bg-surface-0 font-sans text-text">
       <div className="flex flex-col gap-2.5 border-b border-border-faint px-4 pb-4 pt-[18px]">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-[22px] w-[22px] items-center justify-center rounded bg-accent">
+          <div className="flex h-[22px] w-[22px] flex-none items-center justify-center rounded bg-accent">
             <div className="h-2 w-2 rotate-45 rounded-[1px] bg-surface-0" />
           </div>
-          <div className="text-[14.5px] font-semibold tracking-tight text-text">FarmSiM Manager</div>
+          <div className="min-w-0 truncate text-[14.5px] font-semibold tracking-tight text-text">
+            {save?.name ?? "…"}
+          </div>
         </div>
+        <Link
+          to="/"
+          className="font-mono text-[9.5px] tracking-wide text-text-faint hover:text-text-dim"
+        >
+          ‹ ALL SAVES
+        </Link>
         <div className="flex items-center justify-between rounded-[5px] border border-border bg-surface-4 px-2.5 py-1.5">
           <span className="font-mono text-[10.5px] tracking-wide text-text-faint">
             {gameState ? `YEAR ${gameState.current_year} · ${monthLabel(gameState.current_month).toUpperCase()}` : "…"}
