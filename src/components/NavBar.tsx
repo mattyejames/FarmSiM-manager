@@ -12,6 +12,7 @@ const LINKS = [
   { to: "/timeline", label: "Timeline", end: false, countKey: null },
   { to: "/vehicles", label: "Vehicles", end: false, countKey: null },
   { to: "/map", label: "Map", end: false, countKey: null },
+  { to: "/settings", label: "Settings", end: false, countKey: null },
 ];
 
 export default function NavBar() {

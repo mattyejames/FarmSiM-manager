@@ -9,6 +9,7 @@ import RotationGrid from "./routes/RotationGrid";
 import Timeline from "./routes/Timeline";
 import Vehicles from "./routes/Vehicles";
 import MapScreen from "./routes/Map";
+import SaveSettings from "./routes/SaveSettings";
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
         <Route path="timeline" element={<Timeline />} />
         <Route path="vehicles" element={<Vehicles />} />
         <Route path="map" element={<MapScreen />} />
+        <Route path="settings" element={<SaveSettings />} />
       </Route>
     </Routes>
   );

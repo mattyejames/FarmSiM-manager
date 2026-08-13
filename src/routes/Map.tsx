@@ -1,35 +1,31 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { ChangeEvent, MouseEvent } from "react";
+import type { MouseEvent } from "react";
 import { Link } from "react-router-dom";
 import { listFields, updateFieldPin } from "../lib/queries/fields";
 import { listRotationEntries } from "../lib/queries/rotation";
-import { getMapSelection, setMapSelection } from "../lib/queries/map";
 import { useSave } from "../lib/saveContext";
-import { activeMapImage, mapLabel, BUNDLED_MAP_KEYS, BUNDLED_MAP_LABELS } from "../lib/maps";
+import { activeMapImage, mapLabel } from "../lib/maps";
 import { dominantCrop } from "../lib/rotationSummary";
 import { useGameState } from "../lib/gameStateContext";
 import PageHeader from "../components/ui/PageHeader";
-import type { Field, MapKey, MapSelection, RotationEntry } from "../lib/types";
+import type { Field, RotationEntry } from "../lib/types";
 import { NO_CROP_LABEL } from "../lib/crops";
 
 export default function MapScreen() {
-  const { saveId, basePath } = useSave();
+  const { saveId, basePath, save } = useSave();
   const { gameState } = useGameState();
   const [fields, setFields] = useState<Field[]>([]);
   const [entries, setEntries] = useState<RotationEntry[]>([]);
-  const [selection, setSelection] = useState<MapSelection | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [placingFieldId, setPlacingFieldId] = useState<string | null>(null);
   const [cropFilter, setCropFilter] = useState<Set<string>>(new Set());
   const viewportRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function refresh() {
-    const [f, e, sel] = await Promise.all([listFields(saveId), listRotationEntries(saveId), getMapSelection()]);
+    const [f, e] = await Promise.all([listFields(saveId), listRotationEntries(saveId)]);
     setFields(f);
     setEntries(e);
-    setSelection(sel);
     setLoading(false);
   }
 
@@ -83,49 +79,20 @@ export default function MapScreen() {
     await refresh();
   }
 
-  async function handleSwitchMap(key: MapKey) {
-    if (key === selection?.map_key) return;
-    if (pinnedFields.length > 0) {
-      const ok = confirm(
-        "Switching maps clears every field's pin, since positions are measured against the current map image. Continue?",
-      );
-      if (!ok) return;
-      await Promise.all(fields.map((f) => updateFieldPin(f.id, null, null)));
-    }
-    await setMapSelection(key, key === "custom" ? (selection?.custom_image ?? null) : null);
-    setSelectedFieldId(null);
-    await refresh();
-  }
+  if (loading || !save) return <p className="p-6 text-text-dim">Loading…</p>;
 
-  async function handleCustomImage(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const dataUrl = String(reader.result);
-      if (pinnedFields.length > 0 && selection?.map_key !== "custom") {
-        const ok = confirm(
-          "Switching maps clears every field's pin, since positions are measured against the current map image. Continue?",
-        );
-        if (!ok) return;
-        await Promise.all(fields.map((f) => updateFieldPin(f.id, null, null)));
-      }
-      await setMapSelection("custom", dataUrl);
-      await refresh();
-    };
-    reader.readAsDataURL(file);
-  }
-
-  if (loading || !selection) return <p className="p-6 text-text-dim">Loading…</p>;
-
-  const imageSrc = activeMapImage(selection);
+  const imageSrc = activeMapImage(save);
 
   return (
     <div className="flex h-full flex-col">
       <PageHeader
         title="Map"
-        subtitle={`${pinnedFields.length} OF ${fields.length} FIELDS PINNED · ${mapLabel(selection).toUpperCase()}`}
+        subtitle={`${pinnedFields.length} OF ${fields.length} FIELDS PINNED · ${mapLabel(save).toUpperCase()}`}
+        actions={
+          <Link to={`${basePath}/settings`} className="text-[12.5px] text-text-dim underline underline-offset-2">
+            Change map in Settings
+          </Link>
+        }
       />
 
       <div className="flex min-h-0 flex-1">
@@ -170,35 +137,6 @@ export default function MapScreen() {
               ))}
             </div>
           )}
-
-          <div className="mt-auto flex flex-col gap-2 border-t border-border-faint px-4 py-3.5">
-            <span className="font-mono text-[10px] tracking-wide text-text-faint">MY MAPS</span>
-            <div className="flex flex-col gap-1">
-              {BUNDLED_MAP_KEYS.map((key) => (
-                <button
-                  key={key}
-                  onClick={() => handleSwitchMap(key)}
-                  className={`flex justify-between rounded px-2 py-1.5 text-[11.5px] ${
-                    selection.map_key === key ? "bg-accent font-semibold text-accent-ink" : "text-text-dim hover:bg-surface-hover"
-                  }`}
-                >
-                  {BUNDLED_MAP_LABELS[key]}
-                </button>
-              ))}
-              {selection.map_key === "custom" && (
-                <div className="rounded bg-accent px-2 py-1.5 text-[11.5px] font-semibold text-accent-ink">
-                  Custom map
-                </div>
-              )}
-            </div>
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="rounded border border-dashed border-border-strong py-1.5 text-center text-[11px] text-text-faint hover:text-text-dim"
-            >
-              + Add a map image
-            </button>
-            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleCustomImage} />
-          </div>
         </div>
 
         <div
@@ -207,10 +145,14 @@ export default function MapScreen() {
           className={`relative flex-1 overflow-hidden bg-black ${placingFieldId ? "cursor-crosshair" : ""}`}
         >
           {imageSrc ? (
-            <img src={imageSrc} alt={mapLabel(selection)} className="absolute inset-0 h-full w-full object-cover" />
+            <img src={imageSrc} alt={mapLabel(save)} className="absolute inset-0 h-full w-full object-cover" />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center text-text-subtle">
-              No map image set — add one from "My maps".
+              No map image set —{" "}
+              <Link to={`${basePath}/settings`} className="ml-1 underline">
+                add one in Settings
+              </Link>
+              .
             </div>
           )}
           {visiblePins.map((f) => (

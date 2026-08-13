@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { deleteField, getField } from "../lib/queries/fields";
 import { listRotationEntriesForField } from "../lib/queries/rotation";
-import { getMapSelection } from "../lib/queries/map";
 import { useSave } from "../lib/saveContext";
 import { activeMapImage } from "../lib/maps";
 import { dominantCrop } from "../lib/rotationSummary";
@@ -18,19 +17,18 @@ import { NO_CROP_LABEL } from "../lib/crops";
 export default function FieldDetail() {
   const { fieldId } = useParams();
   const navigate = useNavigate();
-  const { basePath } = useSave();
+  const { basePath, save } = useSave();
   const [field, setField] = useState<Field | null>(null);
   const [entries, setEntries] = useState<RotationEntry[]>([]);
-  const [mapImage, setMapImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const mapImage = save ? activeMapImage(save) : null;
 
   useEffect(() => {
     if (!fieldId) return;
-    Promise.all([getField(fieldId), listRotationEntriesForField(fieldId), getMapSelection()]).then(
-      ([f, rotationEntries, sel]) => {
+    Promise.all([getField(fieldId), listRotationEntriesForField(fieldId)]).then(
+      ([f, rotationEntries]) => {
         setField(f);
         setEntries(rotationEntries);
-        setMapImage(activeMapImage(sel));
         setLoading(false);
       },
     );

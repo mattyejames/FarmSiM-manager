@@ -3,19 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { listSaves } from "../lib/queries/saves";
 import { listFields } from "../lib/queries/fields";
 import { listVehicles } from "../lib/queries/vehicles";
-import { activeMapImage } from "../lib/maps";
-import { BUNDLED_MAP_LABELS } from "../lib/types";
+import { activeMapImage, mapLabel } from "../lib/maps";
 import SaveWizard from "../components/SaveWizard";
 import type { Save } from "../lib/types";
 
 interface SaveWithCounts extends Save {
   fieldCount: number;
   vehicleCount: number;
-}
-
-function mapLabelFor(save: Save): string {
-  if (save.map_key === "custom") return save.custom_map_name?.trim() || "Custom map";
-  return BUNDLED_MAP_LABELS[save.map_key];
 }
 
 /** The app's landing screen — every save gets one click into its own scoped instance of the
@@ -79,7 +73,7 @@ export default function SavesHome() {
                   />
                   <div className="text-[13px] font-semibold text-text">{save.name}</div>
                   <div className="flex items-center gap-2.5 font-mono text-[9.5px] tracking-wide text-text-faint">
-                    <span>{mapLabelFor(save).toUpperCase()}</span>
+                    <span>{mapLabel(save).toUpperCase()}</span>
                     <span>{save.fieldCount} FIELDS</span>
                     <span>{save.vehicleCount} VEHICLES</span>
                   </div>
