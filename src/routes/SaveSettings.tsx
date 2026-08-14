@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSave } from "../lib/saveContext";
+import { useSaveFlash } from "../lib/useSaveFlash";
 import { renameSave, setSaveDlc, changeSaveMap, deleteSave } from "../lib/queries/saves";
 import { listFields } from "../lib/queries/fields";
 import { listVehicles } from "../lib/queries/vehicles";
@@ -27,11 +28,11 @@ export default function SaveSettings() {
   const { saveId, save, refreshSave } = useSave();
 
   const [name, setName] = useState("");
-  const [savingName, setSavingName] = useState(false);
+  const nameSave = useSaveFlash();
 
   const [hasDlc, setHasDlc] = useState<boolean | null>(null);
   const [dlcSlugs, setDlcSlugs] = useState<string[]>([]);
-  const [savingDlc, setSavingDlc] = useState(false);
+  const dlcSave = useSaveFlash();
 
   const [mapDraft, setMapDraft] = useState<MapPickerValue | null>(null);
   const [pendingMap, setPendingMap] = useState<MapPickerValue | null>(null);
@@ -66,17 +67,17 @@ export default function SaveSettings() {
 
   async function handleSaveName() {
     if (!name.trim()) return;
-    setSavingName(true);
-    await renameSave(saveId, name.trim());
-    await refreshSave();
-    setSavingName(false);
+    await nameSave.run(async () => {
+      await renameSave(saveId, name.trim());
+      await refreshSave();
+    });
   }
 
   async function handleSaveDlc() {
-    setSavingDlc(true);
-    await setSaveDlc(saveId, hasDlc ? dlcSlugs : []);
-    await refreshSave();
-    setSavingDlc(false);
+    await dlcSave.run(async () => {
+      await setSaveDlc(saveId, hasDlc ? dlcSlugs : []);
+      await refreshSave();
+    });
   }
 
   function toggleDlc(slug: string) {
@@ -125,8 +126,13 @@ export default function SaveSettings() {
             </p>
             <div className="flex items-center gap-2">
               <input value={name} onChange={(e) => setName(e.target.value)} className={INPUT_CLASS} />
-              <Button type="button" variant="secondary" onClick={handleSaveName} disabled={savingName}>
-                {savingName ? "Saving…" : "Save"}
+              <Button
+                type="button"
+                variant={nameSave.state === "saved" ? "primary" : "secondary"}
+                onClick={handleSaveName}
+                disabled={nameSave.state !== "idle"}
+              >
+                {nameSave.state === "saving" ? "Saving…" : nameSave.state === "saved" ? "✓ Saved" : "Save"}
               </Button>
             </div>
           </Card>
@@ -218,8 +224,13 @@ export default function SaveSettings() {
               </div>
             )}
             <div className="flex justify-end">
-              <Button type="button" variant="secondary" onClick={handleSaveDlc} disabled={savingDlc}>
-                {savingDlc ? "Saving…" : "Save"}
+              <Button
+                type="button"
+                variant={dlcSave.state === "saved" ? "primary" : "secondary"}
+                onClick={handleSaveDlc}
+                disabled={dlcSave.state !== "idle"}
+              >
+                {dlcSave.state === "saving" ? "Saving…" : dlcSave.state === "saved" ? "✓ Saved" : "Save"}
               </Button>
             </div>
           </Card>
